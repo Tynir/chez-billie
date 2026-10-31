@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F3F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131118" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chez Billie">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>self.IS_INSTALLED_APP = true;</script>
+<script src="firebase-config.js"></script>
+<title>Chez Billie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<style>
+/* Layout : appli une-page, en-tête mois + grille, panneau du jour, barre d'onglets fixe en bas. */
+:root {
+  --bg: #F4F3F8;
+  --surface: #FFFFFF;
+  --surface-2: #EAE8F1;
+  --line: #DCD9E5;
+  --fg: #1C1926;
+  --muted: #676277;
+  --ink: #2B2242;
+  --on-ink: #FFFFFF;
+  --danger: #BF3A31;
+  --pal-bleu: #2D69D4;
+  --pal-ciel: #0A82B4;
+  --pal-vert: #128D73;
+  --pal-sapin: #2E7D3A;
+  --pal-olive: #6A8A10;
+  --pal-ambre: #C27609;
+  --pal-orange: #D05E18;
+  --pal-rouge: #C8372D;
+  --pal-rose: #CF3D73;
+  --pal-prune: #983D9B;
+  --pal-violet: #7A4FD0;
+  --pal-ardoise: #59637A;
+  --c-p1: var(--pal-bleu);
+  --c-p2: var(--pal-rose);
+  --c-nous: var(--pal-vert);
+  --c-billie: var(--pal-ambre);
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --tabbar-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131118; --surface: #1D1A25; --surface-2: #272333; --line: #343042;
+    --fg: #EEEBF5; --muted: #A49EB4; --ink: #E7E1FF; --on-ink: #1A1525; --danger: #F2685F;
+    --pal-bleu: #6E9DF3; --pal-ciel: #4CC3EE; --pal-vert: #3FC8A2; --pal-sapin: #6CCB7A; --pal-olive: #B5D94A; --pal-ambre: #EFB03C; --pal-orange: #F79A57; --pal-rouge: #F27466; --pal-rose: #F27CA7; --pal-prune: #D987DA; --pal-violet: #AB8CF5; --pal-ardoise: #A3ADC2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131118; --surface: #1D1A25; --surface-2: #272333; --line: #343042;
+  --fg: #EEEBF5; --muted: #A49EB4; --ink: #E7E1FF; --on-ink: #1A1525; --danger: #F2685F;
+  --pal-bleu: #6E9DF3; --pal-ciel: #4CC3EE; --pal-vert: #3FC8A2; --pal-sapin: #6CCB7A; --pal-olive: #B5D94A; --pal-ambre: #EFB03C; --pal-orange: #F79A57; --pal-rouge: #F27466; --pal-rose: #F27CA7; --pal-prune: #D987DA; --pal-violet: #AB8CF5; --pal-ardoise: #A3ADC2;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.cat-p1 { --c: var(--c-p1); } .cat-p2 { --c: var(--c-p2); } .cat-nous { --c: var(--c-nous); } .cat-billie { --c: var(--c-billie); }
+
+.app {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px calc(var(--tabbar-h) + 96px + env(safe-area-inset-bottom, 0px));
+}
+.demo-banner {
+  font-size: 13px; color: var(--muted); background: var(--surface-2);
+  border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;
+}
+.demo-banner strong { color: var(--fg); font-weight: 600; }
+
+/* En-tête */
+.top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.top h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1;
+  letter-spacing: -0.01em; margin: 0; flex: 1; min-width: 0; text-wrap: balance;
+}
+.top h1 small { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); display: grid; place-items: center; flex: none;
+}
+.icon-btn svg { width: 20px; height: 20px; }
+.pill-btn { height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 14px; }
+
+/* Filtres */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+  border-radius: 16px; border: 1px solid var(--line); background: var(--surface);
+  font-size: 13px; font-weight: 600;
+}
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.chip[aria-pressed="false"] { opacity: .45; }
+.chip[aria-pressed="false"] .dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+
+/* Grille du mois */
+.month { background: var(--surface); border-radius: 18px; padding: 10px 8px 8px; border: 1px solid var(--line); touch-action: pan-y; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.dow span { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); padding-bottom: 6px; }
+.day {
+  border: 0; background: none; padding: 4px 0 6px; border-radius: 12px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.day .n { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; font-weight: 500; font-size: 15px; }
+.day.out .n { color: var(--muted); opacity: .55; }
+.day.today .n { background: var(--fg); color: var(--bg); font-weight: 700; }
+.day.sel { background: var(--surface-2); }
+.dots { display: flex; gap: 3px; height: 6px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+
+/* Panneau du jour */
+.daypanel { margin-top: 18px; }
+.daypanel h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0 0 2px; text-transform: capitalize; }
+.together { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.together b { color: var(--c-nous); font-weight: 600; }
+.evlist { display: flex; flex-direction: column; gap: 8px; }
+.ev {
+  display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+}
+.ev .time { width: 48px; flex: none; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; line-height: 1.25; }
+.ev .time small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.ev .body { flex: 1; min-width: 0; }
+.ev .title { font-weight: 600; overflow-wrap: anywhere; }
+.ev .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--muted); margin-top: 3px; align-items: center; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--c); }
+.tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.meta svg { width: 13px; height: 13px; vertical-align: -2px; }
+.empty { color: var(--muted); padding: 18px 4px; font-size: 14px; }
+
+/* Dispos */
+.section-title { font-family: var(--font-display); font-weight: 700; font-size: 28px; margin: 0 0 4px; }
+.lead { color: var(--muted); margin: 0 0 16px; max-width: 60ch; }
+.ctrl { margin-bottom: 14px; }
+.ctrl > span { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--surface); font-size: 13.5px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); font-weight: 600; }
+.slots { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.slotday { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.slotday h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; text-transform: capitalize; display: flex; justify-content: space-between; gap: 8px; }
+.slotday h3 em { font-style: normal; font-weight: 600; color: var(--c-nous); font-size: 12.5px; }
+.slotlist { display: flex; flex-wrap: wrap; gap: 6px; }
+.slot {
+  border: 1px solid color-mix(in srgb, var(--c-nous) 45%, transparent);
+  background: color-mix(in srgb, var(--c-nous) 12%, var(--surface));
+  border-radius: 10px; padding: 6px 10px; font-size: 13.5px; font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.slot small { font-weight: 400; color: var(--muted); margin-left: 4px; }
+.note { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+/* Réglages */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
+.card h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label, .field .lbl { font-size: 13px; font-weight: 600; }
+.input {
+  width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg); padding: 0 12px; font-size: 16px; min-width: 0;
+}
+textarea.input { height: auto; min-height: 72px; padding: 10px 12px; resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.namefield { display: flex; align-items: center; gap: 10px; }
+.person { display: flex; flex-direction: column; gap: 8px; }
+.colorbtn {
+  width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg); display: grid; place-items: center;
+}
+.colorbtn .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--c); }
+.colorbtn[aria-expanded="true"] { border-color: var(--c); box-shadow: 0 0 0 1px var(--c); }
+.fixedname { flex: 1; min-width: 0; height: 44px; display: flex; align-items: center; padding: 0 12px; font-size: 16px; color: var(--muted); }
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 4px 0 6px; }
+.sw {
+  aspect-ratio: 1; max-width: 100%; border-radius: 50%; border: 0; background: var(--sw);
+  position: relative; display: grid; place-items: center; color: var(--surface); font-size: 11px; font-weight: 700;
+}
+.sw[aria-checked="true"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--sw); }
+.sw svg { width: 55%; height: 55%; }
+.btn { height: 46px; border-radius: 14px; border: 0; padding: 0 18px; font-weight: 600; font-size: 15px; background: var(--ink); color: var(--on-ink); }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.btn.danger { background: transparent; color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
+.btn.danger.armed { background: var(--danger); color: #fff; border-color: var(--danger); }
+.status { font-size: 13px; color: var(--muted); }
+
+/* FAB + onglets */
+.fab {
+  position: fixed; z-index: 5;
+  right: max(18px, calc(env(safe-area-inset-right, 0px) + 18px));
+  bottom: calc(var(--tabbar-h) + 18px + env(safe-area-inset-bottom, 0px));
+  width: 58px; height: 58px; border-radius: 20px; border: 0;
+  background: var(--ink); color: var(--on-ink); display: grid; place-items: center;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.fab svg { width: 26px; height: 26px; }
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+}
+.tabbar nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tabbar-h); }
+.tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.tabbar button svg { width: 22px; height: 22px; }
+.tabbar button[aria-current="page"] { color: var(--fg); }
+
+/* Feuille d'édition */
+dialog.sheet {
+  border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px;
+  background: var(--surface); color: var(--fg); border-radius: 22px 22px 0 0;
+  max-height: 92vh; max-height: 92dvh;
+}
+dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
+.sheet form {
+  display: flex; flex-direction: column; gap: 14px; overflow-y: auto; max-height: 92vh; max-height: 92dvh;
+  padding: 18px max(18px, env(safe-area-inset-left, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-right, 0px));
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sheet-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0; }
+.who { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.who label { position: relative; }
+.who input { position: absolute; opacity: 0; inset: 0; }
+.who span {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px;
+  border-radius: 12px; border: 1px solid var(--line); font-size: 12.5px; font-weight: 600; text-align: center; overflow-wrap: anywhere;
+}
+.who span::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--c); }
+.who input:checked + span { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
+.who input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 14px; }
+.switch input { width: 22px; height: 22px; accent-color: var(--ink); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions .btn { flex: 1; }
+.err { color: var(--danger); font-size: 13px; font-weight: 600; }
+
+/* Connexion */
+.login { min-height: 70vh; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.login h1 { font-family: var(--font-display); font-weight: 700; font-size: 40px; margin: 0; line-height: 1; }
+.login p { color: var(--muted); margin: 0; }
+.linkbtn { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 13.5px; padding: 4px 0; align-self: flex-start; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 20;
+  bottom: calc(var(--tabbar-h) + 90px + env(safe-area-inset-bottom, 0px));
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500;
+  max-width: calc(100% - 32px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise .2s ease-out; }
+  @keyframes rise { from { transform: translate(-50%, 8px); opacity: 0; } }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="demo-banner" id="demoBanner" hidden><strong>Mode démo.</strong> Événements d'exemple, enregistrés sur ce téléphone seulement. La synchro à deux s'active une fois Firebase configuré.</div>
+
+  <!-- Connexion -->
+  <section class="login" id="viewLogin" hidden>
+    <h1>Chez Billie</h1>
+    <p>Connecte-toi avec le compte créé pour toi.</p>
+    <form id="loginForm" class="card" novalidate>
+      <div class="field"><label for="loginEmail">E-mail</label><input class="input" id="loginEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="loginPass">Mot de passe</label><input class="input" id="loginPass" type="password" autocomplete="current-password" required></div>
+      <div class="err" id="loginErr" hidden></div>
+      <button class="btn" type="submit" id="loginBtn">Se connecter</button>
+      <button class="linkbtn" type="button" id="forgotBtn">Mot de passe oublié</button>
+    </form>
+  </section>
+
+  <!-- Calendrier -->
+  <section id="viewCal" hidden>
+    <div class="top">
+      <h1 id="monthTitle"><small>Chez Billie</small><span></span></h1>
+      <button class="icon-btn" id="prevMonth" aria-label="Mois précédent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon-btn" id="nextMonth" aria-label="Mois suivant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      <button class="pill-btn" id="todayBtn">Auj.</button>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="month" id="month">
+      <div class="dow"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div class="daypanel">
+      <h2 id="dayTitle"></h2>
+      <p class="together" id="dayTogether"></p>
+      <div class="evlist" id="dayList"></div>
+    </div>
+  </section>
+
+  <!-- Dispos communes -->
+  <section id="viewFree" hidden>
+    <h1 class="section-title">Dispos communes</h1>
+    <p class="lead" id="freeLead">Les créneaux où vous êtes libres tous les deux. Vos événements perso et « Nous » comptent comme occupés. Ceux de Billie, non.</p>
+    <div class="ctrl"><span>Période</span><div class="seg" id="segRange"></div></div>
+    <div class="ctrl"><span>Plage horaire</span><div class="seg" id="segWindow"></div></div>
+    <div class="ctrl"><span>Durée minimum</span><div class="seg" id="segDur"></div></div>
+    <div class="ctrl"><span>Jours</span><div class="seg" id="segDays"></div></div>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <!-- Réglages -->
+  <section id="viewSettings" hidden>
+    <h1 class="section-title">Réglages</h1>
+    <div class="card">
+      <h3>Prénoms et couleurs</h3>
+      <div class="person cat-p1">
+        <div class="namefield"><button type="button" class="colorbtn" data-pick="p1" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><input class="input" id="nameP1" aria-label="Prénom 1" maxlength="20"></div>
+        <div class="swatches" data-for="p1" role="radiogroup" hidden></div>
+      </div>
+      <div class="person cat-p2">
+        <div class="namefield"><button type="button" class="colorbtn" data-pick="p2" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><input class="input" id="nameP2" aria-label="Prénom 2" maxlength="20"></div>
+        <div class="swatches" data-for="p2" role="radiogroup" hidden></div>
+      </div>
+      <div class="person cat-nous">
+        <div class="namefield"><button type="button" class="colorbtn" data-pick="nous" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><span class="fixedname">Nous (vous deux)</span></div>
+        <div class="swatches" data-for="nous" role="radiogroup" hidden></div>
+      </div>
+      <div class="person cat-billie">
+        <div class="namefield"><button type="button" class="colorbtn" data-pick="billie" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><input class="input" id="nameBillie" aria-label="Nom du chat" maxlength="20"></div>
+        <div class="swatches" data-for="billie" role="radiogroup" hidden></div>
+      </div>
+      <p>Touche une pastille pour changer de couleur. Prénoms et couleurs sont partagés entre vos deux téléphones.</p>
+    </div>
+    <div class="card">
+      <h3>Ce téléphone</h3>
+      <div class="field"><span class="lbl">Je suis</span><div class="seg" id="segMe"></div></div>
+      <p>Sert aux rappels : tu reçois ceux de tes événements, de « Nous » et de Billie.</p>
+    </div>
+    <div class="card">
+      <h3>Thème</h3>
+      <div class="seg" id="segTheme"></div>
+    </div>
+    <div class="card">
+      <h3>Rappels</h3>
+      <p id="notifText"></p>
+      <button class="btn" id="notifBtn" type="button">Activer les rappels sur ce téléphone</button>
+      <div class="status" id="notifStatus"></div>
+    </div>
+    <div class="card" id="accountCard" hidden>
+      <h3>Compte</h3>
+      <p id="accountEmail"></p>
+      <button class="btn ghost" id="logoutBtn" type="button">Se déconnecter</button>
+    </div>
+    <div class="card" id="demoCard" hidden>
+      <h3>Données de démo</h3>
+      <p>Remet les événements d'exemple à zéro.</p>
+      <button class="btn ghost" id="resetDemo" type="button">Réinitialiser la démo</button>
+    </div>
+  </section>
+</div>
+
+<button class="fab" id="fab" aria-label="Ajouter un événement" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<div class="tabbar" id="tabbar" hidden>
+  <nav>
+    <button data-view="cal" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendrier</button>
+    <button data-view="free"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="10" r="2.6"/><path d="M3.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5M14.5 14.6c.5-.2 1-.3 1.5-.3 2.2 0 3.9 1.6 4.4 4.2"/></svg>Dispos</button>
+    <button data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</button>
+  </nav>
+</div>
+
+<dialog class="sheet" id="sheet">
+  <form id="evForm" novalidate>
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Nouvel événement</h2>
+      <button class="icon-btn" type="button" id="sheetClose" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="field"><label for="evTitle">Titre</label><input class="input" id="evTitle" maxlength="80" placeholder="Ex. Régie son, véto de Billie…"></div>
+    <div class="field"><span class="lbl">Pour qui</span><div class="who" id="evWho"></div></div>
+    <label class="switch" for="evAllDay">Toute la journée <input type="checkbox" id="evAllDay"></label>
+    <div class="row">
+      <div class="field"><label for="evDate">Date</label><input class="input" type="date" id="evDate"></div>
+      <div class="field" id="evEndDateField"><label for="evEndDate">Jusqu'au</label><input class="input" type="date" id="evEndDate"></div>
+    </div>
+    <div class="row" id="evTimes">
+      <div class="field"><label for="evStart">Début</label><input class="input" type="time" id="evStart" step="300"></div>
+      <div class="field"><label for="evEnd">Fin</label><input class="input" type="time" id="evEnd" step="300"></div>
+    </div>
+    <div class="field"><label for="evReminder">Rappel</label><select class="input" id="evReminder"></select></div>
+    <div class="field"><label for="evNotes">Notes</label><textarea class="input" id="evNotes" maxlength="500" placeholder="Adresse, contact, à ne pas oublier…"></textarea></div>
+    <div class="err" id="evErr" hidden></div>
+    <div class="actions">
+      <button class="btn danger" type="button" id="evDelete" hidden>Supprimer</button>
+      <button class="btn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+// ---------- Utilitaires ----------
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const fmtMin = (m) => (m >= 1440 ? '24:00' : `${pad(Math.floor(m / 60))}:${pad(m % 60)}`);
+const fmtDur = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ' ' + pad(r) : ''}` : `${r} min`; };
+const todayYmd = () => ymd(new Date());
+const fmtDay = (s, opts = { weekday: 'long', day: 'numeric', month: 'long' }) => parseYmd(s).toLocaleDateString('fr-FR', opts);
+
+const CATS = ['p1', 'p2', 'nous', 'billie'];
+const DEFAULT_NAMES = { p1: 'Lui', p2: 'Elle', nous: 'Nous', billie: 'Billie' };
+const PALETTE = [['bleu', 'Bleu'], ['ciel', 'Ciel'], ['vert', 'Vert'], ['sapin', 'Sapin'], ['olive', 'Olive'], ['ambre', 'Ambre'], ['orange', 'Orange'], ['rouge', 'Rouge'], ['rose', 'Rose'], ['prune', 'Prune'], ['violet', 'Violet'], ['ardoise', 'Ardoise']];
+const DEFAULT_COLORS = { p1: 'bleu', p2: 'rose', nous: 'vert', billie: 'ambre' };
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
+const REMINDERS_TIMED = [['', 'Aucun'], ['30', '30 min avant'], ['60', '1 h avant'], ['120', '2 h avant'], ['1440', 'La veille, même heure'], ['2880', '2 jours avant']];
+const REMINDERS_ALLDAY = [['', 'Aucun'], ['0', 'Le jour même à 9 h'], ['900', 'La veille à 18 h'], ['2340', '2 jours avant à 18 h']];
+
+const state = {
+  mode: 'demo', user: null, events: [],
+  names: { ...DEFAULT_NAMES },
+  colors: { ...DEFAULT_COLORS },
+  picking: null,
+  me: ls.get('cb-me', 'p1'),
+  view: 'cal',
+  month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
+  selected: todayYmd(),
+  hidden: ls.get('cb-hidden', []),
+  free: ls.get('cb-free', { range: 14, win: 'all', dur: 120, days: 'all' }),
+  editing: null,
+};
+const nameOf = (c) => state.names[c] || DEFAULT_NAMES[c];
+
+// ---------- Thème ----------
+function applyTheme(t) {
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+}
+applyTheme(ls.get('cb-theme', 'auto'));
+
+function applyColors() {
+  const root = document.documentElement;
+  for (const c of CATS) {
+    const k = PALETTE.some((p) => p[0] === state.colors[c]) ? state.colors[c] : DEFAULT_COLORS[c];
+    root.style.setProperty(`--c-${c}`, `var(--pal-${k})`);
+  }
+}
+function setColors(colors) { state.colors = { ...DEFAULT_COLORS, ...(colors || {}) }; applyColors(); }
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+// ---------- Calculs ----------
+function spanEnd(e) { return e.allDay && e.endDate && e.endDate >= e.date ? e.endDate : e.date; }
+function isOvernight(e) { return !e.allDay && e.end && toMin(e.end) <= toMin(e.start); }
+
+function eventsOn(day, includeHidden = false) {
+  return state.events
+    .filter((e) => (includeHidden || !state.hidden.includes(e.who)) && day >= e.date && day <= spanEnd(e) && (e.allDay || e.date === day))
+    .sort((a, b) => (a.allDay === b.allDay ? (a.start || '').localeCompare(b.start || '') : a.allDay ? -1 : 1));
+}
+
+// Intervalles occupés (en minutes) pour le couple sur une journée : perso + « Nous ». Billie ne bloque pas.
+function busyIntervals(day) {
+  const out = [];
+  for (const e of state.events) {
+    if (e.who === 'billie') continue;
+    if (e.allDay) { if (day >= e.date && day <= spanEnd(e)) out.push([0, 1440]); continue; }
+    const s = toMin(e.start);
+    const en = e.end ? toMin(e.end) : s + 60;
+    if (e.date === day) out.push([s, en > s ? en : 1440]);
+    else if (e.end && en <= s && addDays(e.date, 1) === day) out.push([0, en]);
+  }
+  return out;
+}
+
+function freeSlots(day, ws, we, minDur) {
+  let start = ws;
+  if (day === todayYmd()) { const n = new Date(); start = Math.max(ws, Math.ceil((n.getHours() * 60 + n.getMinutes()) / 15) * 15); }
+  if (start >= we) return [];
+  const busy = busyIntervals(day)
+    .map(([a, b]) => [Math.max(a, start), Math.min(b, we)])
+    .filter(([a, b]) => b > a)
+    .sort((x, y) => x[0] - y[0]);
+  const free = []; let cur = start;
+  for (const [a, b] of busy) { if (a > cur) free.push([cur, a]); cur = Math.max(cur, b); }
+  if (we > cur) free.push([cur, we]);
+  return free.filter(([a, b]) => b - a >= minDur);
+}
+
+function computeRemindAt(e) {
+  if (e.reminder === '' || e.reminder == null) return null;
+  const d = parseYmd(e.date);
+  d.setHours(0, e.allDay ? 9 * 60 : toMin(e.start), 0, 0);
+  return new Date(d.getTime() - Number(e.reminder) * 60000);
+}
+
+// ---------- Stockage : démo (local) ----------
+function demoSeed() {
+  const t = todayYmd(), D = (n) => addDays(t, n);
+  let i = 0; const id = () => 'demo' + (++i);
+  return [
+    { id: id(), title: 'Répétition batterie', who: 'p1', date: D(-2), start: '14:00', end: '17:00', allDay: false },
+    { id: id(), title: 'Régie son – concert salle des fêtes', who: 'p1', date: t, start: '17:00', end: '01:30', allDay: false, reminder: '120', notes: 'Balances à 17 h, ouverture des portes 20 h.' },
+    { id: id(), title: 'Vermifuge de Billie', who: 'billie', date: t, allDay: true, reminder: '0' },
+    { id: id(), title: 'Yoga', who: 'p2', date: D(1), start: '10:00', end: '11:00', allDay: false },
+    { id: id(), title: 'Ciné', who: 'nous', date: D(1), start: '20:30', end: '22:45', allDay: false, reminder: '60' },
+    { id: id(), title: 'Tournée – montage et démontage', who: 'p1', date: D(2), endDate: D(4), allDay: true },
+    { id: id(), title: 'Dîner chez Léa', who: 'p2', date: D(3), start: '19:30', end: '23:00', allDay: false },
+    { id: id(), title: 'Courses de la semaine', who: 'nous', date: D(6), start: '11:00', end: '12:00', allDay: false },
+    { id: id(), title: 'Véto – rappel vaccin', who: 'billie', date: D(6), start: '17:30', end: '18:00', allDay: false, reminder: '1440', notes: 'Prendre le carnet de santé.' },
+    { id: id(), title: 'Réunion d’équipe', who: 'p2', date: D(9), start: '09:00', end: '12:30', allDay: false },
+    { id: id(), title: 'Week-end à la montagne', who: 'nous', date: D(12), endDate: D(13), allDay: true },
+  ];
+}
+const demoStore = {
+  start() {
+    state.events = ls.get('cb-demo-events', null) || demoSeed();
+    state.names = { ...DEFAULT_NAMES, ...ls.get('cb-demo-names', {}) };
+    setColors(ls.get('cb-demo-colors', {}));
+    this.persist(); render();
+  },
+  persist() { ls.set('cb-demo-events', state.events); },
+  async save(ev) {
+    if (ev.id) state.events = state.events.map((e) => (e.id === ev.id ? ev : e));
+    else state.events.push({ ...ev, id: 'l' + Date.now() });
+    this.persist(); render();
+  },
+  async remove(id) { state.events = state.events.filter((e) => e.id !== id); this.persist(); render(); },
+  async saveNames(n) { state.names = n; ls.set('cb-demo-names', n); render(); },
+  async saveMe() {},
+  async saveColors(c) { setColors(c); ls.set('cb-demo-colors', c); render(); },
+  reset() { state.events = demoSeed(); this.persist(); render(); },
+};
+
+// ---------- Stockage : Firebase (synchro à deux) ----------
+const FB_VERSION = '10.14.1';
+const FB_BASE = `https://www.gstatic.com/firebasejs/${FB_VERSION}/`;
+let fb = null;
+const fbStore = {
+  async init(cfg) {
+    const [appM, authM, fsM] = await Promise.all([
+      import(FB_BASE + 'firebase-app.js'), import(FB_BASE + 'firebase-auth.js'), import(FB_BASE + 'firebase-firestore.js'),
+    ]);
+    const app = appM.initializeApp(cfg);
+    let db;
+    try { db = fsM.initializeFirestore(app, { localCache: fsM.persistentLocalCache({ tabManager: fsM.persistentMultipleTabManager() }) }); }
+    catch { db = fsM.getFirestore(app); }
+    fb = { app, auth: authM.getAuth(app), db, authM, fsM, unsubs: [] };
+    authM.onAuthStateChanged(fb.auth, (user) => {
+      fb.unsubs.forEach((u) => u()); fb.unsubs = [];
+      state.user = user; state.authReady = true;
+      if (!user) { state.events = []; render(); return; }
+      this.listen(user); render();
+    });
+  },
+  listen(user) {
+    const { fsM, db } = fb;
+    fb.unsubs.push(fsM.onSnapshot(fsM.collection(db, 'events'), (snap) => {
+      state.events = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      render();
+    }, (err) => toast('Lecture impossible : vérifie les règles Firestore (' + err.code + ').')));
+    fb.unsubs.push(fsM.onSnapshot(fsM.doc(db, 'config', 'foyer'), (snap) => {
+      state.names = { ...DEFAULT_NAMES, ...(snap.data()?.names || {}) };
+      setColors(snap.data()?.colors); ls.set('cb-colors', state.colors); render();
+    }));
+    fsM.getDoc(fsM.doc(db, 'users', user.uid)).then((s) => {
+      const p = s.data()?.person;
+      if (p) { state.me = p; ls.set('cb-me', p); render(); }
+      else this.saveMe(state.me);
+    }).catch(() => {});
+    refreshPushToken();
+  },
+  async save(ev) {
+    const { fsM, db } = fb;
+    const { id, ...data } = ev;
+    const ra = computeRemindAt(ev);
+    const payload = {
+      ...data, remindAt: ra ? fsM.Timestamp.fromDate(ra) : null, reminderSent: false,
+      updatedAt: fsM.serverTimestamp(), updatedBy: state.user.email,
+    };
+    if (id) await fsM.setDoc(fsM.doc(db, 'events', id), payload);
+    else await fsM.addDoc(fsM.collection(db, 'events'), payload);
+  },
+  async remove(id) { await fb.fsM.deleteDoc(fb.fsM.doc(fb.db, 'events', id)); },
+  async saveColors(c) { setColors(c); render(); await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'config', 'foyer'), { colors: c }, { merge: true }); },
+  async saveNames(n) { await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'config', 'foyer'), { names: n }, { merge: true }); },
+  async saveMe(p) {
+    if (!state.user) return;
+    await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'users', state.user.uid), { person: p, email: state.user.email }, { merge: true });
+  },
+};
+const store = () => (state.mode === 'firebase' ? fbStore : demoStore);
+
+// ---------- Notifications push ----------
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+async function getPushToken(ask) {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) throw new Error('unsupported');
+  if (ask) { const p = await Notification.requestPermission(); if (p !== 'granted') throw new Error('denied'); }
+  else if (Notification.permission !== 'granted') return null;
+  const msgM = await import(FB_BASE + 'firebase-messaging.js');
+  if (!(await msgM.isSupported())) throw new Error('unsupported');
+  const reg = await navigator.serviceWorker.ready;
+  const messaging = msgM.getMessaging(fb.app);
+  const token = await msgM.getToken(messaging, { vapidKey: self.FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
+  await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'users', state.user.uid), { tokens: fb.fsM.arrayUnion(token), person: state.me, email: state.user.email }, { merge: true });
+  if (!getPushToken._listening) {
+    getPushToken._listening = true;
+    msgM.onMessage(messaging, (p) => toast(p.notification?.title || 'Rappel'));
+  }
+  return token;
+}
+async function refreshPushToken() { try { if (ls.get('cb-push', false)) await getPushToken(false); } catch {} }
+
+async function enableNotifs() {
+  const st = $('#notifStatus');
+  if (state.mode !== 'firebase') { st.textContent = 'Disponible une fois l’appli reliée à Firebase (voir le guide).'; return; }
+  if (isIOS && !isStandalone()) { st.textContent = 'Sur iPhone : ouvre d’abord l’appli depuis l’écran d’accueil (Partager → Sur l’écran d’accueil), puis reviens ici.'; return; }
+  st.textContent = 'Activation…';
+  try {
+    await getPushToken(true); ls.set('cb-push', true);
+    st.textContent = 'Rappels activés sur ce téléphone.';
+  } catch (e) {
+    st.textContent = e.message === 'denied'
+      ? 'Notifications refusées. Autorise-les dans les réglages du téléphone pour cette appli, puis réessaie.'
+      : 'Ce navigateur ne gère pas les notifications. Sur Android, utilise Chrome ; sur iPhone, iOS 16.4 minimum et appli installée.';
+  }
+}
+
+// ---------- Rendu ----------
+function render() {
+  const waiting = state.mode === 'firebase' && !state.authReady;
+  const loggedOut = waiting || (state.mode === 'firebase' && !state.user);
+  $('#viewLogin').hidden = !loggedOut || waiting;
+  $('#demoBanner').hidden = state.mode !== 'demo';
+  $('#tabbar').hidden = loggedOut;
+  $('#viewCal').hidden = loggedOut || state.view !== 'cal';
+  $('#viewFree').hidden = loggedOut || state.view !== 'free';
+  $('#viewSettings').hidden = loggedOut || state.view !== 'settings';
+  $('#fab').hidden = loggedOut || state.view === 'settings';
+  document.querySelectorAll('.tabbar button').forEach((b) => b.toggleAttribute('aria-current', b.dataset.view === state.view));
+  document.querySelectorAll('.tabbar button[aria-current]').forEach((b) => b.setAttribute('aria-current', 'page'));
+  if (loggedOut) return;
+  if (state.view === 'cal') renderCal();
+  if (state.view === 'free') renderFree();
+  if (state.view === 'settings') renderSettings();
+}
+
+function renderFilters() {
+  $('#filters').innerHTML = CATS.map((c) =>
+    `<button class="chip cat-${c}" data-cat="${c}" aria-pressed="${!state.hidden.includes(c)}"><span class="dot"></span>${esc(nameOf(c))}</button>`).join('');
+}
+
+function renderCal() {
+  renderFilters();
+  const m = state.month;
+  $('#monthTitle span').textContent = m.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).replace(/^./, (c) => c.toUpperCase());
+  const first = new Date(m.getFullYear(), m.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  const cells = Math.ceil((offset + dim) / 7) * 7;
+  const start = new Date(first); start.setDate(1 - offset);
+  const today = todayYmd();
+  let html = '';
+  for (let i = 0; i < cells; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const key = ymd(d);
+    const cats = [...new Set(eventsOn(key).map((e) => e.who))].sort((a, b) => CATS.indexOf(a) - CATS.indexOf(b));
+    const cls = ['day', d.getMonth() !== m.getMonth() && 'out', key === today && 'today', key === state.selected && 'sel'].filter(Boolean).join(' ');
+    const label = `${fmtDay(key)}${cats.length ? ', ' + cats.length + ' type(s) d’événement' : ''}`;
+    html += `<button class="${cls}" data-day="${key}" aria-label="${esc(label)}"><span class="n">${d.getDate()}</span><span class="dots">${cats.map((c) => `<i class="cat-${c}"></i>`).join('')}</span></button>`;
+  }
+  $('#grid').innerHTML = html;
+
+  const sel = state.selected;
+  $('#dayTitle').textContent = sel === today ? "Aujourd'hui · " + fmtDay(sel, { day: 'numeric', month: 'long' }) : fmtDay(sel);
+  const fs = freeSlots(sel, 8 * 60, 1440, 60);
+  $('#dayTogether').innerHTML = fs.length
+    ? `Libres ensemble : <b>${fs.slice(0, 3).map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(', ')}</b>${fs.length > 3 ? '…' : ''}`
+    : 'Pas de créneau commun d’au moins 1 h ce jour-là.';
+  const list = eventsOn(sel);
+  $('#dayList').innerHTML = list.length ? list.map(evItem).join('') : `<div class="empty">Rien de prévu. Touche + pour ajouter un événement.</div>`;
+}
+
+function evItem(e) {
+  let time;
+  if (e.allDay) time = `Journée${e.endDate && e.endDate > e.date ? `<small>jusqu'au ${esc(fmtDay(e.endDate, { day: 'numeric', month: 'short' }))}</small>` : ''}`;
+  else time = `${esc(e.start)}${e.end ? `<small>${isOvernight(e) ? '→ ' : ''}${esc(e.end)}${isOvernight(e) ? ' (lend.)' : ''}</small>` : ''}`;
+  const rem = e.reminder !== '' && e.reminder != null
+    ? `<span>${BELL} ${esc((e.allDay ? REMINDERS_ALLDAY : REMINDERS_TIMED).find((r) => r[0] === String(e.reminder))?.[1] || 'Rappel')}</span>` : '';
+  const notes = e.notes ? `<span>${esc(e.notes.length > 60 ? e.notes.slice(0, 60) + '…' : e.notes)}</span>` : '';
+  return `<button class="ev cat-${e.who}" data-id="${esc(e.id)}"><div class="time">${time}</div><div class="body"><div class="title">${esc(e.title)}</div><div class="meta"><span class="tag">${esc(nameOf(e.who))}</span>${rem}${notes}</div></div></button>`;
+}
+
+const FREE_OPTS = {
+  range: [[7, '7 jours'], [14, '2 semaines'], [30, '1 mois']],
+  win: [['all', 'Toute la journée'], ['day', '9 h – 19 h'], ['eve', 'Soirée (18 h +)']],
+  dur: [[60, '1 h'], [120, '2 h'], [180, '3 h'], [240, 'Demi-journée']],
+  days: [['all', 'Tous'], ['we', 'Week-ends']],
+};
+const WINDOWS = { all: [8 * 60, 1440], day: [9 * 60, 19 * 60], eve: [18 * 60, 1440] };
+function seg(el, key, opts) {
+  el.innerHTML = opts.map(([v, l]) => `<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(state.free[key]) === String(v)}">${l}</button>`).join('');
+}
+function renderFree() {
+  seg($('#segRange'), 'range', FREE_OPTS.range);
+  seg($('#segWindow'), 'win', FREE_OPTS.win);
+  seg($('#segDur'), 'dur', FREE_OPTS.dur);
+  seg($('#segDays'), 'days', FREE_OPTS.days);
+  $('#freeLead').textContent = `Les créneaux où ${nameOf('p1')} et ${nameOf('p2')} sont libres tous les deux. Les événements perso et « Nous » comptent comme occupés. Ceux de ${nameOf('billie')}, non.`;
+  const [ws, we] = WINDOWS[state.free.win];
+  const out = [];
+  let total = 0;
+  for (let i = 0; i < Number(state.free.range); i++) {
+    const day = addDays(todayYmd(), i);
+    const dow = parseYmd(day).getDay();
+    if (state.free.days === 'we' && dow !== 0 && dow !== 6) continue;
+    const slots = freeSlots(day, ws, we, Number(state.free.dur));
+    if (!slots.length) continue;
+    total++;
+    const whole = slots.length === 1 && slots[0][0] === ws && slots[0][1] === we && day !== todayYmd();
+    out.push(`<div class="slotday"><h3><span>${esc(i === 0 ? "Aujourd'hui" : i === 1 ? 'Demain' : fmtDay(day))}</span>${whole ? '<em>Libres toute la plage</em>' : ''}</h3><div class="slotlist">${
+      slots.map(([a, b]) => `<span class="slot">${fmtMin(a)}–${fmtMin(b)}<small>${fmtDur(b - a)}</small></span>`).join('')}</div></div>`);
+  }
+  $('#slots').innerHTML = out.length ? out.join('') + `<p class="note">${total} jour${total > 1 ? 's' : ''} avec au moins un créneau commun.</p>`
+    : `<div class="empty">Aucun créneau commun avec ces critères. Essaie une durée plus courte ou une période plus longue.</div>`;
+}
+
+function renderSettings() {
+  const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+  set('#nameP1', nameOf('p1')); set('#nameP2', nameOf('p2')); set('#nameBillie', nameOf('billie'));
+  document.querySelectorAll('.colorbtn').forEach((b) => b.setAttribute('aria-expanded', String(state.picking === b.dataset.pick)));
+  document.querySelectorAll('.swatches').forEach((box) => {
+    const c = box.dataset.for;
+    box.hidden = state.picking !== c;
+    if (box.hidden) return;
+    box.innerHTML = PALETTE.map(([k, label]) => {
+      const owner = CATS.find((o) => o !== c && state.colors[o] === k);
+      const on = state.colors[c] === k;
+      const aria = label + (owner ? `, déjà prise par ${nameOf(owner)} (échange)` : '');
+      return `<button type="button" class="sw" style="--sw: var(--pal-${k})" role="radio" aria-checked="${on}" data-sw="${k}" data-for-cat="${c}" aria-label="${esc(aria)}" title="${esc(aria)}">${on ? CHECK : owner ? esc(nameOf(owner).slice(0, 1).toUpperCase()) : ''}</button>`;
+    }).join('');
+  });
+  $('#segMe').innerHTML = ['p1', 'p2'].map((p) => `<button type="button" class="cat-${p}" data-me="${p}" aria-pressed="${state.me === p}">${esc(nameOf(p))}</button>`).join('');
+  const th = ls.get('cb-theme', 'auto');
+  $('#segTheme').innerHTML = [['auto', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']].map(([v, l]) => `<button type="button" data-theme-v="${v}" aria-pressed="${th === v}">${l}</button>`).join('');
+  $('#notifText').textContent = state.mode === 'firebase'
+    ? 'Notifications avant les événements qui ont un rappel. Elles partent toutes les 10 minutes environ, prévois une petite marge.'
+    : 'En mode démo, les rappels ne sont pas envoyés. Ils fonctionnent une fois Firebase configuré.';
+  $('#accountCard').hidden = state.mode !== 'firebase';
+  $('#demoCard').hidden = state.mode !== 'demo';
+  if (state.user) $('#accountEmail').textContent = 'Connecté : ' + state.user.email;
+  if (state.mode === 'firebase' && ls.get('cb-push', false) && !$('#notifStatus').textContent) $('#notifStatus').textContent = 'Rappels activés sur ce téléphone.';
+}
+
+// ---------- Feuille d'édition ----------
+function fillReminders(allDay, value) {
+  const opts = allDay ? REMINDERS_ALLDAY : REMINDERS_TIMED;
+  const sel = $('#evReminder');
+  sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  sel.value = opts.some((o) => o[0] === String(value ?? '')) ? String(value ?? '') : '';
+}
+function syncAllDay() {
+  const ad = $('#evAllDay').checked;
+  $('#evTimes').hidden = ad;
+  $('#evEndDateField').hidden = !ad;
+  fillReminders(ad, $('#evReminder').value);
+}
+function openSheet(ev) {
+  state.editing = ev || null;
+  const e = ev || { title: '', who: state.me, date: state.selected, start: '19:00', end: '20:00', allDay: false, reminder: '60', notes: '' };
+  $('#sheetTitle').textContent = ev ? 'Modifier' : 'Nouvel événement';
+  $('#evTitle').value = e.title || '';
+  $('#evWho').innerHTML = CATS.map((c) => `<label class="cat-${c}"><input type="radio" name="who" value="${c}" ${e.who === c ? 'checked' : ''}><span>${esc(nameOf(c))}</span></label>`).join('');
+  $('#evAllDay').checked = !!e.allDay;
+  $('#evDate').value = e.date;
+  $('#evEndDate').value = e.endDate || e.date;
+  $('#evStart').value = e.start || '19:00';
+  $('#evEnd').value = e.end || '';
+  $('#evNotes').value = e.notes || '';
+  syncAllDay();
+  fillReminders(!!e.allDay, e.reminder);
+  $('#evErr').hidden = true;
+  const del = $('#evDelete'); del.hidden = !ev; del.classList.remove('armed'); del.textContent = 'Supprimer';
+  const dlg = $('#sheet');
+  if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  if (!ev) setTimeout(() => $('#evTitle').focus(), 50);
+}
+function closeSheet() { const d = $('#sheet'); if (d.open) d.close ? d.close() : d.removeAttribute('open'); }
+
+async function submitSheet(evt) {
+  evt.preventDefault();
+  const err = (m) => { const e = $('#evErr'); e.textContent = m; e.hidden = false; };
+  const title = $('#evTitle').value.trim();
+  const who = document.querySelector('input[name="who"]:checked')?.value;
+  const allDay = $('#evAllDay').checked;
+  const date = $('#evDate').value;
+  if (!title) return err('Donne un titre à l’événement.');
+  if (!who) return err('Choisis pour qui est l’événement.');
+  if (!date) return err('Choisis une date.');
+  const ev = { title, who, allDay, date, reminder: $('#evReminder').value, notes: $('#evNotes').value.trim() };
+  if (state.editing) ev.id = state.editing.id;
+  if (allDay) {
+    const endDate = $('#evEndDate').value;
+    if (endDate && endDate < date) return err('La date de fin est avant la date de début.');
+    ev.endDate = endDate && endDate > date ? endDate : null;
+    ev.start = null; ev.end = null;
+  } else {
+    ev.start = $('#evStart').value;
+    if (!ev.start) return err('Indique une heure de début.');
+    ev.end = $('#evEnd').value || null;
+    ev.endDate = null;
+  }
+  try {
+    await store().save(ev);
+    closeSheet();
+    state.selected = date;
+    const d = parseYmd(date); state.month = new Date(d.getFullYear(), d.getMonth(), 1);
+    if (state.view !== 'cal') state.view = 'cal';
+    render();
+    toast(state.editing ? 'Événement modifié' : 'Événement ajouté');
+  } catch (e) { err('Enregistrement impossible. Vérifie ta connexion et réessaie.'); }
+}
+
+// ---------- Événements ----------
+function bind() {
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.day) {
+      state.selected = t.dataset.day;
+      const d = parseYmd(t.dataset.day);
+      if (d.getMonth() !== state.month.getMonth()) state.month = new Date(d.getFullYear(), d.getMonth(), 1);
+      renderCal(); return;
+    }
+    if (t.dataset.pick) { state.picking = state.picking === t.dataset.pick ? null : t.dataset.pick; renderSettings(); return; }
+    if (t.dataset.sw) {
+      const c = t.dataset.forCat, k = t.dataset.sw;
+      const next = { ...state.colors };
+      const owner = CATS.find((o) => o !== c && next[o] === k);
+      if (owner) next[owner] = next[c];   // couleur déjà prise : on échange
+      next[c] = k;
+      store().saveColors(next).catch(() => toast('Couleur non enregistrée, réessaie.'));
+      return;
+    }
+    if (t.dataset.cat) {
+      const c = t.dataset.cat;
+      state.hidden = state.hidden.includes(c) ? state.hidden.filter((x) => x !== c) : [...state.hidden, c];
+      ls.set('cb-hidden', state.hidden); renderCal(); return;
+    }
+    if (t.dataset.id) { const ev = state.events.find((x) => x.id === t.dataset.id); if (ev) openSheet(ev); return; }
+    if (t.dataset.view) { state.view = t.dataset.view; render(); window.scrollTo(0, 0); return; }
+    if (t.dataset.k) { state.free[t.dataset.k] = isNaN(t.dataset.v) ? t.dataset.v : Number(t.dataset.v); ls.set('cb-free', state.free); renderFree(); return; }
+    if (t.dataset.me) { state.me = t.dataset.me; ls.set('cb-me', state.me); store().saveMe(state.me).catch(() => {}); renderSettings(); return; }
+    if (t.dataset.themeV) { ls.set('cb-theme', t.dataset.themeV); applyTheme(t.dataset.themeV); renderSettings(); }
+  });
+  const shiftMonth = (n) => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() + n, 1); renderCal(); };
+  $('#prevMonth').onclick = () => shiftMonth(-1);
+  $('#nextMonth').onclick = () => shiftMonth(1);
+  $('#todayBtn').onclick = () => { const d = new Date(); state.month = new Date(d.getFullYear(), d.getMonth(), 1); state.selected = todayYmd(); renderCal(); };
+  let sx = null, sy = null;
+  $('#month').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  $('#month').addEventListener('touchend', (e) => {
+    if (sx == null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shiftMonth(dx < 0 ? 1 : -1);
+    sx = null;
+  });
+  $('#fab').onclick = () => openSheet(null);
+  $('#sheetClose').onclick = closeSheet;
+  $('#sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
+  $('#evAllDay').onchange = syncAllDay;
+  $('#evDate').onchange = () => { if ($('#evEndDate').value < $('#evDate').value) $('#evEndDate').value = $('#evDate').value; };
+  $('#evStart').onchange = () => {
+    if (!$('#evStart').value) return;
+    if (!$('#evEnd').value || state.editing == null) $('#evEnd').value = fmtMin((toMin($('#evStart').value) + 60) % 1440);
+  };
+  $('#evForm').addEventListener('submit', submitSheet);
+  $('#evDelete').onclick = async () => {
+    const b = $('#evDelete');
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Confirmer la suppression'; return; }
+    try { await store().remove(state.editing.id); closeSheet(); toast('Événement supprimé'); }
+    catch { $('#evErr').textContent = 'Suppression impossible. Réessaie.'; $('#evErr').hidden = false; }
+  };
+  const saveNames = () => {
+    const n = { ...state.names, p1: $('#nameP1').value.trim() || 'Lui', p2: $('#nameP2').value.trim() || 'Elle', billie: $('#nameBillie').value.trim() || 'Billie' };
+    store().saveNames(n).catch(() => toast('Prénoms non enregistrés, réessaie.'));
+  };
+  ['#nameP1', '#nameP2', '#nameBillie'].forEach((id) => $(id).addEventListener('change', saveNames));
+  $('#notifBtn').onclick = enableNotifs;
+  $('#resetDemo').onclick = () => { demoStore.reset(); toast('Démo réinitialisée'); };
+  $('#logoutBtn').onclick = () => fb.authM.signOut(fb.auth);
+  $('#loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const er = $('#loginErr'); er.hidden = true;
+    const btn = $('#loginBtn'); btn.disabled = true; btn.textContent = 'Connexion…';
+    try { await fb.authM.signInWithEmailAndPassword(fb.auth, $('#loginEmail').value.trim(), $('#loginPass').value); }
+    catch (x) {
+      er.textContent = /invalid|wrong|not-found|credential/.test(x.code || '') ? 'E-mail ou mot de passe incorrect.' : 'Connexion impossible (' + (x.code || 'réseau') + ').';
+      er.hidden = false;
+    }
+    btn.disabled = false; btn.textContent = 'Se connecter';
+  });
+  $('#forgotBtn').onclick = async () => {
+    const email = $('#loginEmail').value.trim(); const er = $('#loginErr');
+    if (!email) { er.textContent = 'Écris ton e-mail au-dessus, puis touche « Mot de passe oublié ».'; er.hidden = false; return; }
+    try { await fb.authM.sendPasswordResetEmail(fb.auth, email); toast('E-mail de réinitialisation envoyé'); }
+    catch { er.textContent = 'Envoi impossible. Vérifie l’adresse.'; er.hidden = false; }
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+}
+
+// ---------- Démarrage ----------
+async function boot() {
+  bind();
+  setColors(ls.get('cb-colors', {}));
+  const cfg = self.FIREBASE_CONFIG;
+  const configured = cfg && cfg.apiKey && !String(cfg.apiKey).startsWith('A_REMPLIR');
+  if (self.IS_INSTALLED_APP && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (configured) {
+    state.mode = 'firebase';
+    render();
+    try { await fbStore.init(cfg); }
+    catch (e) { state.mode = 'demo'; demoStore.start(); toast('Connexion à Firebase impossible, passage en mode démo.'); }
+  } else {
+    demoStore.start();
+  }
+}
+boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "chez-billie-rappels",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node send-reminders.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
