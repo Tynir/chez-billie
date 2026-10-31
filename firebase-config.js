@@ -6,7 +6,7 @@ self.FIREBASE_CONFIG = {
   apiKey: "AIzaSyDe0zz-fKplLEDRZ-jlSWuGyhZ1nI7qmNQ",
   authDomain: "chez-billie.firebaseapp.com",
   projectId: "chez-billie",
-  storageBucket: ""chez-billie.firebasestorage.app",
+  storageBucket: "chez-billie.firebasestorage.app",
   messagingSenderId: "1046006893986",
   appId: "1:1046006893986:web:807472e490e3067a38f6fb"
 };
