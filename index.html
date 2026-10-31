@@ -98,6 +98,19 @@ button { cursor: pointer; }
   font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1;
   letter-spacing: -0.01em; margin: 0; flex: 1; min-width: 0; text-wrap: balance;
 }
+.monthbtn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; }
+.monthbtn svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.monthbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.yearbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.yearbar strong { font-family: var(--font-display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.months button {
+  height: 52px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg);
+  font-weight: 600; font-size: 15px; text-transform: capitalize; position: relative;
+}
+.months button.has::after { content: ""; position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.months button.now { border-color: var(--fg); }
+.months button[aria-current="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
 .top h1 small { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line);
@@ -143,13 +156,15 @@ button { cursor: pointer; }
   display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
 }
-.ev .time { width: 48px; flex: none; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; line-height: 1.25; }
+.ev .time { width: 56px; flex: none; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; line-height: 1.25; }
 .ev .time small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
 .ev .body { flex: 1; min-width: 0; }
 .ev .title { font-weight: 600; overflow-wrap: anywhere; }
 .ev .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--muted); margin-top: 3px; align-items: center; }
 .tag { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--c); }
 .tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.hint { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
+.actions .btn.danger { flex: 1 1 140px; }
 .meta svg { width: 13px; height: 13px; vertical-align: -2px; }
 .empty { color: var(--muted); padding: 18px 4px; font-size: 14px; }
 
@@ -296,7 +311,7 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
   <!-- Calendrier -->
   <section id="viewCal" hidden>
     <div class="top">
-      <h1 id="monthTitle"><small>Chez Billie</small><span></span></h1>
+      <h1 id="monthTitle"><small>Chez Billie</small><button type="button" class="monthbtn" id="monthPickBtn" aria-label="Choisir un mois"><span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></h1>
       <button class="icon-btn" id="prevMonth" aria-label="Mois précédent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="icon-btn" id="nextMonth" aria-label="Mois suivant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
       <button class="pill-btn" id="todayBtn">Auj.</button>
@@ -385,6 +400,22 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
   </nav>
 </div>
 
+<dialog class="sheet" id="monthSheet">
+  <form id="monthForm" novalidate>
+    <div class="sheet-head">
+      <h2>Aller à…</h2>
+      <button class="icon-btn" type="button" id="monthClose" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="yearbar">
+      <button class="icon-btn" type="button" id="yearPrev" aria-label="Année précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <strong id="yearLabel"></strong>
+      <button class="icon-btn" type="button" id="yearNext" aria-label="Année suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <div class="months" id="monthsGrid"></div>
+    <div class="field"><label for="jumpDate">Ou une date précise</label><input class="input" type="date" id="jumpDate"></div>
+  </form>
+</dialog>
+
 <dialog class="sheet" id="sheet">
   <form id="evForm" novalidate>
     <div class="sheet-head">
@@ -395,17 +426,25 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
     <div class="field"><span class="lbl">Pour qui</span><div class="who" id="evWho"></div></div>
     <label class="switch" for="evAllDay">Toute la journée <input type="checkbox" id="evAllDay"></label>
     <div class="row">
-      <div class="field"><label for="evDate">Date</label><input class="input" type="date" id="evDate"></div>
+      <div class="field"><label for="evDate">Du</label><input class="input" type="date" id="evDate"></div>
       <div class="field" id="evEndDateField"><label for="evEndDate">Jusqu'au</label><input class="input" type="date" id="evEndDate"></div>
     </div>
     <div class="row" id="evTimes">
       <div class="field"><label for="evStart">Début</label><input class="input" type="time" id="evStart" step="300"></div>
       <div class="field"><label for="evEnd">Fin</label><input class="input" type="time" id="evEnd" step="300"></div>
     </div>
+    <div class="row">
+      <div class="field"><label for="evRepeat">Répéter</label><select class="input" id="evRepeat"></select></div>
+      <div class="field" id="evEndsField" hidden><label for="evEnds">Fin</label><select class="input" id="evEnds"><option value="never">Jamais</option><option value="until">À une date</option><option value="count">Après X fois</option></select></div>
+    </div>
+    <div class="field" id="evUntilField" hidden><label for="evUntil">Dernière fois le</label><input class="input" type="date" id="evUntil"></div>
+    <div class="field" id="evCountField" hidden><label for="evCount">Nombre de fois (en tout)</label><input class="input" type="number" id="evCount" min="2" max="500" inputmode="numeric"></div>
+    <p class="hint" id="evSeriesNote" hidden>Événement récurrent : les modifications s'appliquent à toutes les dates.</p>
     <div class="field"><label for="evReminder">Rappel</label><select class="input" id="evReminder"></select></div>
     <div class="field"><label for="evNotes">Notes</label><textarea class="input" id="evNotes" maxlength="500" placeholder="Adresse, contact, à ne pas oublier…"></textarea></div>
     <div class="err" id="evErr" hidden></div>
     <div class="actions">
+      <button class="btn danger" type="button" id="evDeleteOne" hidden>Supprimer ce jour-là</button>
       <button class="btn danger" type="button" id="evDelete" hidden>Supprimer</button>
       <button class="btn" type="submit">Enregistrer</button>
     </div>
@@ -439,6 +478,7 @@ const DEFAULT_NAMES = { p1: 'Lui', p2: 'Elle', nous: 'Nous', billie: 'Billie' };
 const PALETTE = [['bleu', 'Bleu'], ['ciel', 'Ciel'], ['vert', 'Vert'], ['sapin', 'Sapin'], ['olive', 'Olive'], ['ambre', 'Ambre'], ['orange', 'Orange'], ['rouge', 'Rouge'], ['rose', 'Rose'], ['prune', 'Prune'], ['violet', 'Violet'], ['ardoise', 'Ardoise']];
 const DEFAULT_COLORS = { p1: 'bleu', p2: 'rose', nous: 'vert', billie: 'ambre' };
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const REPEAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg>';
 const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
 const REMINDERS_TIMED = [['', 'Aucun'], ['30', '30 min avant'], ['60', '1 h avant'], ['120', '2 h avant'], ['1440', 'La veille, même heure'], ['2880', '2 jours avant']];
 const REMINDERS_ALLDAY = [['', 'Aucun'], ['0', 'Le jour même à 9 h'], ['900', 'La veille à 18 h'], ['2340', '2 jours avant à 18 h']];
@@ -480,22 +520,121 @@ function toast(msg) {
 }
 
 // ---------- Calculs ----------
-function spanEnd(e) { return e.allDay && e.endDate && e.endDate >= e.date ? e.endDate : e.date; }
-function isOvernight(e) { return !e.allDay && e.end && toMin(e.end) <= toMin(e.start); }
+function spanEnd(e) { return e.endDate && e.endDate > e.date ? e.endDate : e.date; }
+function isMultiDay(e) { return !!(e.endDate && e.endDate > e.date); }
+function isOvernight(e) { return !e.allDay && !isMultiDay(e) && e.end && toMin(e.end) <= toMin(e.start); }
+const shortDay = (s) => fmtDay(s, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+function dayOrder(e, day) { return e.allDay ? -1 : day > e.date ? 0 : toMin(e.start); }
+
+// ----- Récurrence -----
+const hasRepeat = (e) => !!(e.repeat && e.repeat.freq && e.repeat.freq !== 'none');
+function spanDays(e) { return Math.round((parseYmd(spanEnd(e)) - parseYmd(e.date)) / 864e5); }
+// Vrai si une occurrence de e commence le jour d (exceptions et limites comprises).
+function isStart(e, d) {
+  if (d < e.date) return false;
+  if (!hasRepeat(e)) return d === e.date;
+  const r = e.repeat;
+  if (r.until && d > r.until) return false;
+  if ((e.exdates || []).includes(d)) return false;
+  const iv = Math.max(1, Number(r.interval) || 1);
+  const a = parseYmd(e.date), b = parseYmd(d);
+  let idx;
+  if (r.freq === 'daily' || r.freq === 'weekly') {
+    const step = r.freq === 'daily' ? iv : 7 * iv;
+    const diff = Math.round((b - a) / 864e5);
+    if (diff % step) return false;
+    idx = diff / step;
+  } else if (r.freq === 'monthly') {
+    if (b.getDate() !== a.getDate()) return false;
+    const md = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
+    if (md % iv) return false;
+    idx = 0;
+    for (let m = 0; m < md; m += iv) if (new Date(a.getFullYear(), a.getMonth() + m, a.getDate()).getDate() === a.getDate()) idx++;
+  } else if (r.freq === 'yearly') {
+    if (b.getDate() !== a.getDate() || b.getMonth() !== a.getMonth()) return false;
+    const yd = b.getFullYear() - a.getFullYear();
+    if (yd % iv) return false;
+    idx = 0;
+    for (let y = 0; y < yd; y += iv) if (new Date(a.getFullYear() + y, a.getMonth(), a.getDate()).getMonth() === a.getMonth()) idx++;
+  } else return d === e.date;
+  return !(r.count && idx >= Number(r.count));
+}
+function shiftTo(e, s) {
+  if (s === e.date) return { ...e, occ: s };
+  return { ...e, date: s, endDate: isMultiDay(e) ? addDays(s, spanDays(e)) : null, occ: s };
+}
+// Occurrences (décalées à leur vraie date) qui touchent ce jour ; lookback = jours en plus vers l'arrière (soirées après minuit).
+function instancesCovering(day, lookback = 0) {
+  const out = [];
+  for (const e of state.events) {
+    const span = spanDays(e);
+    for (let k = 0; k <= span + lookback; k++) {
+      const s = addDays(day, -k);
+      if (isStart(e, s)) out.push(shiftTo(e, s));
+    }
+  }
+  return out;
+}
+const WD = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+function repeatOptions(date) {
+  const d = parseYmd(date);
+  return [
+    ['none', 'Jamais'],
+    ['daily:1', 'Tous les jours'],
+    ['weekly:1', `Chaque semaine (le ${WD[d.getDay()]})`],
+    ['weekly:2', `Toutes les 2 semaines (le ${WD[d.getDay()]})`],
+    ['monthly:1', `Tous les mois (le ${d.getDate()})`],
+    ['monthly:3', `Tous les 3 mois (le ${d.getDate()})`],
+    ['yearly:1', `Tous les ans (le ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })})`],
+  ];
+}
+function repeatLabel(e) {
+  if (!hasRepeat(e)) return '';
+  const { freq, interval = 1, until, count } = e.repeat;
+  const d = parseYmd(e.date);
+  const base = {
+    daily: interval > 1 ? `Tous les ${interval} jours` : 'Tous les jours',
+    weekly: interval > 1 ? `Toutes les ${interval} semaines` : `Chaque ${WD[d.getDay()]}`,
+    monthly: interval > 1 ? `Tous les ${interval} mois, le ${d.getDate()}` : `Tous les ${d.getDate()} du mois`,
+    yearly: 'Tous les ans',
+  }[freq] || '';
+  const end = until ? ` jusqu'au ${shortDay(until)}` : count ? ` · ${count} fois` : '';
+  return base + end;
+}
+// Prochain rappel à envoyer (occurrence + heure), à partir de maintenant.
+function nextRemind(e, now = new Date()) {
+  if (e.reminder === '' || e.reminder == null) return null;
+  const mins = Number(e.reminder);
+  const at = (occ) => { const d = parseYmd(occ); d.setHours(0, e.allDay ? 9 * 60 : toMin(e.start), 0, 0); return new Date(d.getTime() - mins * 60000); };
+  if (!hasRepeat(e)) { const t = at(e.date); return t > now ? { at: t, occ: e.date } : null; }
+  let d = ymd(now) > e.date ? addDays(ymd(now), -3) : e.date;
+  for (let i = 0; i < 4000; i++, d = addDays(d, 1)) {
+    if (e.repeat.until && d > e.repeat.until) return null;
+    if (isStart(e, d)) { const t = at(d); if (t > now) return { at: t, occ: d }; }
+  }
+  return null;
+}
 
 function eventsOn(day, includeHidden = false) {
-  return state.events
-    .filter((e) => (includeHidden || !state.hidden.includes(e.who)) && day >= e.date && day <= spanEnd(e) && (e.allDay || e.date === day))
-    .sort((a, b) => (a.allDay === b.allDay ? (a.start || '').localeCompare(b.start || '') : a.allDay ? -1 : 1));
+  return instancesCovering(day)
+    .filter((e) => includeHidden || !state.hidden.includes(e.who))
+    .sort((a, b) => dayOrder(a, day) - dayOrder(b, day));
 }
 
 // Intervalles occupés (en minutes) pour le couple sur une journée : perso + « Nous ». Billie ne bloque pas.
 function busyIntervals(day) {
   const out = [];
-  for (const e of state.events) {
+  for (const e of instancesCovering(day, 1)) {
     if (e.who === 'billie') continue;
     if (e.allDay) { if (day >= e.date && day <= spanEnd(e)) out.push([0, 1440]); continue; }
     const s = toMin(e.start);
+    if (isMultiDay(e)) {
+      if (day < e.date || day > e.endDate) continue;
+      const a = day === e.date ? s : 0;
+      const b = day === e.endDate && e.end ? toMin(e.end) : 1440;
+      if (b > a) out.push([a, b]);
+      continue;
+    }
     const en = e.end ? toMin(e.end) : s + 60;
     if (e.date === day) out.push([s, en > s ? en : 1440]);
     else if (e.end && en <= s && addDays(e.date, 1) === day) out.push([0, en]);
@@ -517,19 +656,14 @@ function freeSlots(day, ws, we, minDur) {
   return free.filter(([a, b]) => b - a >= minDur);
 }
 
-function computeRemindAt(e) {
-  if (e.reminder === '' || e.reminder == null) return null;
-  const d = parseYmd(e.date);
-  d.setHours(0, e.allDay ? 9 * 60 : toMin(e.start), 0, 0);
-  return new Date(d.getTime() - Number(e.reminder) * 60000);
-}
 
 // ---------- Stockage : démo (local) ----------
 function demoSeed() {
   const t = todayYmd(), D = (n) => addDays(t, n);
   let i = 0; const id = () => 'demo' + (++i);
   return [
-    { id: id(), title: 'Répétition batterie', who: 'p1', date: D(-2), start: '14:00', end: '17:00', allDay: false },
+    { id: id(), title: 'Répétition batterie', who: 'p1', date: D(-2), start: '14:00', end: '17:00', allDay: false, repeat: { freq: 'weekly', interval: 1, until: D(90), count: null } },
+    { id: id(), title: 'Commander les croquettes', who: 'billie', date: (() => { const n = new Date(); return ymd(new Date(n.getFullYear(), n.getMonth(), 10)); })(), allDay: true, reminder: '900', repeat: { freq: 'monthly', interval: 1, until: null, count: null } },
     { id: id(), title: 'Régie son – concert salle des fêtes', who: 'p1', date: t, start: '17:00', end: '01:30', allDay: false, reminder: '120', notes: 'Balances à 17 h, ouverture des portes 20 h.' },
     { id: id(), title: 'Vermifuge de Billie', who: 'billie', date: t, allDay: true, reminder: '0' },
     { id: id(), title: 'Yoga', who: 'p2', date: D(1), start: '10:00', end: '11:00', allDay: false },
@@ -539,7 +673,7 @@ function demoSeed() {
     { id: id(), title: 'Courses de la semaine', who: 'nous', date: D(6), start: '11:00', end: '12:00', allDay: false },
     { id: id(), title: 'Véto – rappel vaccin', who: 'billie', date: D(6), start: '17:30', end: '18:00', allDay: false, reminder: '1440', notes: 'Prendre le carnet de santé.' },
     { id: id(), title: 'Réunion d’équipe', who: 'p2', date: D(9), start: '09:00', end: '12:30', allDay: false },
-    { id: id(), title: 'Week-end à la montagne', who: 'nous', date: D(12), endDate: D(13), allDay: true },
+    { id: id(), title: 'Week-end à la montagne', who: 'nous', date: D(12), endDate: D(14), start: '09:00', end: '19:00', allDay: false, reminder: '1440' },
   ];
 }
 const demoStore = {
@@ -603,9 +737,9 @@ const fbStore = {
   async save(ev) {
     const { fsM, db } = fb;
     const { id, ...data } = ev;
-    const ra = computeRemindAt(ev);
+    const nr = nextRemind(ev);
     const payload = {
-      ...data, remindAt: ra ? fsM.Timestamp.fromDate(ra) : null, reminderSent: false,
+      ...data, remindAt: nr ? fsM.Timestamp.fromDate(nr.at) : null, remindOcc: nr ? nr.occ : null, reminderSent: false,
       updatedAt: fsM.serverTimestamp(), updatedBy: state.user.email,
     };
     if (id) await fsM.setDoc(fsM.doc(db, 'events', id), payload);
@@ -685,7 +819,7 @@ function renderFilters() {
 function renderCal() {
   renderFilters();
   const m = state.month;
-  $('#monthTitle span').textContent = m.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).replace(/^./, (c) => c.toUpperCase());
+  $('#monthPickBtn span').textContent = m.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).replace(/^./, (c) => c.toUpperCase());
   const first = new Date(m.getFullYear(), m.getMonth(), 1);
   const offset = (first.getDay() + 6) % 7;
   const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
@@ -710,17 +844,30 @@ function renderCal() {
     ? `Libres ensemble : <b>${fs.slice(0, 3).map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(', ')}</b>${fs.length > 3 ? '…' : ''}`
     : 'Pas de créneau commun d’au moins 1 h ce jour-là.';
   const list = eventsOn(sel);
-  $('#dayList').innerHTML = list.length ? list.map(evItem).join('') : `<div class="empty">Rien de prévu. Touche + pour ajouter un événement.</div>`;
+  $('#dayList').innerHTML = list.length ? list.map((e) => evItem(e, sel)).join('') : `<div class="empty">Rien de prévu. Touche + pour ajouter un événement.</div>`;
 }
 
-function evItem(e) {
+function evItem(e, day) {
   let time;
-  if (e.allDay) time = `Journée${e.endDate && e.endDate > e.date ? `<small>jusqu'au ${esc(fmtDay(e.endDate, { day: 'numeric', month: 'short' }))}</small>` : ''}`;
+  const multi = isMultiDay(e);
+  if (e.allDay) time = 'Journée';
+  else if (multi && day === e.date) time = `${esc(e.start)}<small>début</small>`;
+  else if (multi && day === e.endDate) time = e.end ? `${esc(e.end)}<small>fin</small>` : 'Dernier jour';
+  else if (multi) time = 'Journée<small>suite</small>';
   else time = `${esc(e.start)}${e.end ? `<small>${isOvernight(e) ? '→ ' : ''}${esc(e.end)}${isOvernight(e) ? ' (lend.)' : ''}</small>` : ''}`;
   const rem = e.reminder !== '' && e.reminder != null
     ? `<span>${BELL} ${esc((e.allDay ? REMINDERS_ALLDAY : REMINDERS_TIMED).find((r) => r[0] === String(e.reminder))?.[1] || 'Rappel')}</span>` : '';
   const notes = e.notes ? `<span>${esc(e.notes.length > 60 ? e.notes.slice(0, 60) + '…' : e.notes)}</span>` : '';
-  return `<button class="ev cat-${e.who}" data-id="${esc(e.id)}"><div class="time">${time}</div><div class="body"><div class="title">${esc(e.title)}</div><div class="meta"><span class="tag">${esc(nameOf(e.who))}</span>${rem}${notes}</div></div></button>`;
+  let span = '';
+  if (multi) {
+    const n = Math.round((parseYmd(e.endDate) - parseYmd(e.date)) / 864e5) + 1;
+    const k = Math.round((parseYmd(day) - parseYmd(e.date)) / 864e5) + 1;
+    const from = `${shortDay(e.date)}${e.allDay ? '' : ' ' + e.start}`;
+    const to = `${shortDay(e.endDate)}${!e.allDay && e.end ? ' ' + e.end : ''}`;
+    span = `<span>Du ${esc(from)} au ${esc(to)} · jour ${k}/${n}</span>`;
+  }
+  if (hasRepeat(e)) span += `<span>${REPEAT_ICON} ${esc(repeatLabel(e))}</span>`;
+  return `<button class="ev cat-${e.who}" data-id="${esc(e.id)}" data-occ="${esc(e.occ || e.date)}"><div class="time">${time}</div><div class="body"><div class="title">${esc(e.title)}</div><div class="meta"><span class="tag">${esc(nameOf(e.who))}</span>${span}${rem}${notes}</div></div></button>`;
 }
 
 const FREE_OPTS = {
@@ -794,11 +941,24 @@ function fillReminders(allDay, value) {
 function syncAllDay() {
   const ad = $('#evAllDay').checked;
   $('#evTimes').hidden = ad;
-  $('#evEndDateField').hidden = !ad;
   fillReminders(ad, $('#evReminder').value);
 }
-function openSheet(ev) {
+function fillRepeat(date, value) {
+  const sel = $('#evRepeat');
+  const opts = repeatOptions(date);
+  const cur = value ?? sel.value;
+  sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
+  sel.value = opts.some((o) => o[0] === cur) ? cur : 'none';
+}
+function syncRepeat() {
+  const on = $('#evRepeat').value !== 'none';
+  $('#evEndsField').hidden = !on;
+  $('#evUntilField').hidden = !on || $('#evEnds').value !== 'until';
+  $('#evCountField').hidden = !on || $('#evEnds').value !== 'count';
+}
+function openSheet(ev, occ) {
   state.editing = ev || null;
+  state.editingOcc = occ || null;
   const e = ev || { title: '', who: state.me, date: state.selected, start: '19:00', end: '20:00', allDay: false, reminder: '60', notes: '' };
   $('#sheetTitle').textContent = ev ? 'Modifier' : 'Nouvel événement';
   $('#evTitle').value = e.title || '';
@@ -811,8 +971,19 @@ function openSheet(ev) {
   $('#evNotes').value = e.notes || '';
   syncAllDay();
   fillReminders(!!e.allDay, e.reminder);
+  const r = hasRepeat(e) ? e.repeat : null;
+  let rv = r ? `${r.freq}:${r.interval || 1}` : 'none';
+  if (r && !repeatOptions(e.date).some((o) => o[0] === rv)) rv = 'none';
+  fillRepeat(e.date, rv);
+  $('#evEnds').value = r?.until ? 'until' : r?.count ? 'count' : 'never';
+  $('#evUntil').value = r?.until || addDays(e.date, 182);
+  $('#evCount').value = r?.count || 10;
+  syncRepeat();
+  $('#evSeriesNote').hidden = !r || !ev;
   $('#evErr').hidden = true;
-  const del = $('#evDelete'); del.hidden = !ev; del.classList.remove('armed'); del.textContent = 'Supprimer';
+  const del = $('#evDelete'); del.hidden = !ev; del.classList.remove('armed'); del.textContent = r ? 'Supprimer toute la série' : 'Supprimer';
+  const one = $('#evDeleteOne'); one.hidden = !ev || !r; one.classList.remove('armed');
+  if (ev && r && occ) one.textContent = `Supprimer le ${shortDay(occ)}`;
   const dlg = $('#sheet');
   if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
   if (!ev) setTimeout(() => $('#evTitle').focus(), 50);
@@ -840,7 +1011,29 @@ async function submitSheet(evt) {
     ev.start = $('#evStart').value;
     if (!ev.start) return err('Indique une heure de début.');
     ev.end = $('#evEnd').value || null;
-    ev.endDate = null;
+    const endDate = $('#evEndDate').value;
+    if (endDate && endDate < date) return err('La date de fin est avant la date de début.');
+    ev.endDate = endDate && endDate > date ? endDate : null;
+  }
+  const rv = $('#evRepeat').value;
+  if (rv === 'none') { ev.repeat = null; ev.exdates = []; }
+  else {
+    const [freq, interval] = rv.split(':');
+    ev.repeat = { freq, interval: Number(interval), until: null, count: null };
+    const ends = $('#evEnds').value;
+    if (ends === 'until') {
+      const u = $('#evUntil').value;
+      if (!u) return err('Indique la date de la dernière fois.');
+      if (u < date) return err('La dernière fois est avant la première.');
+      ev.repeat.until = u;
+    } else if (ends === 'count') {
+      const n = parseInt($('#evCount').value, 10);
+      if (!(n >= 2 && n <= 500)) return err('Le nombre de fois doit être entre 2 et 500.');
+      ev.repeat.count = n;
+    }
+    const same = state.editing && hasRepeat(state.editing) && state.editing.date === date
+      && state.editing.repeat.freq === freq && Number(state.editing.repeat.interval || 1) === Number(interval);
+    ev.exdates = same ? (state.editing.exdates || []) : [];
   }
   try {
     await store().save(ev);
@@ -878,7 +1071,7 @@ function bind() {
       state.hidden = state.hidden.includes(c) ? state.hidden.filter((x) => x !== c) : [...state.hidden, c];
       ls.set('cb-hidden', state.hidden); renderCal(); return;
     }
-    if (t.dataset.id) { const ev = state.events.find((x) => x.id === t.dataset.id); if (ev) openSheet(ev); return; }
+    if (t.dataset.id) { const ev = state.events.find((x) => x.id === t.dataset.id); if (ev) openSheet(ev, t.dataset.occ); return; }
     if (t.dataset.view) { state.view = t.dataset.view; render(); window.scrollTo(0, 0); return; }
     if (t.dataset.k) { state.free[t.dataset.k] = isNaN(t.dataset.v) ? t.dataset.v : Number(t.dataset.v); ls.set('cb-free', state.free); renderFree(); return; }
     if (t.dataset.me) { state.me = t.dataset.me; ls.set('cb-me', state.me); store().saveMe(state.me).catch(() => {}); renderSettings(); return; }
@@ -887,6 +1080,38 @@ function bind() {
   const shiftMonth = (n) => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() + n, 1); renderCal(); };
   $('#prevMonth').onclick = () => shiftMonth(-1);
   $('#nextMonth').onclick = () => shiftMonth(1);
+  let pickYear = 0;
+  const renderMonths = () => {
+    $('#yearLabel').textContent = pickYear;
+    const now = new Date();
+    const counts = new Set(state.events.map((e) => e.date.slice(0, 7)));
+    $('#monthsGrid').innerHTML = Array.from({ length: 12 }, (_, i) => {
+      const key = `${pickYear}-${pad(i + 1)}`;
+      const cur = state.month.getFullYear() === pickYear && state.month.getMonth() === i;
+      const isNow = now.getFullYear() === pickYear && now.getMonth() === i;
+      const label = new Date(pickYear, i, 1).toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+      return `<button type="button" data-m="${i}" class="${counts.has(key) ? 'has' : ''} ${isNow ? 'now' : ''}" aria-current="${cur}" aria-label="${esc(new Date(pickYear, i, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }))}">${esc(label)}</button>`;
+    }).join('');
+  };
+  const closeMonths = () => { const d = $('#monthSheet'); if (d.open) d.close ? d.close() : d.removeAttribute('open'); };
+  const goTo = (y, m, day) => {
+    state.month = new Date(y, m, 1);
+    const today = new Date();
+    state.selected = day ? day : (today.getFullYear() === y && today.getMonth() === m ? todayYmd() : ymd(new Date(y, m, 1)));
+    closeMonths(); renderCal();
+  };
+  $('#monthPickBtn').onclick = () => {
+    pickYear = state.month.getFullYear(); renderMonths();
+    $('#jumpDate').value = state.selected;
+    const d = $('#monthSheet'); if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+  };
+  $('#yearPrev').onclick = () => { pickYear--; renderMonths(); };
+  $('#yearNext').onclick = () => { pickYear++; renderMonths(); };
+  $('#monthsGrid').addEventListener('click', (e) => { const b = e.target.closest('[data-m]'); if (b) goTo(pickYear, Number(b.dataset.m)); });
+  $('#jumpDate').addEventListener('change', (e) => { const v = e.target.value; if (v) { const d = parseYmd(v); goTo(d.getFullYear(), d.getMonth(), v); } });
+  $('#monthClose').onclick = closeMonths;
+  $('#monthSheet').addEventListener('click', (e) => { if (e.target.id === 'monthSheet') closeMonths(); });
+  $('#monthForm').addEventListener('submit', (e) => e.preventDefault());
   $('#todayBtn').onclick = () => { const d = new Date(); state.month = new Date(d.getFullYear(), d.getMonth(), 1); state.selected = todayYmd(); renderCal(); };
   let sx = null, sy = null;
   $('#month').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
@@ -900,12 +1125,28 @@ function bind() {
   $('#sheetClose').onclick = closeSheet;
   $('#sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
   $('#evAllDay').onchange = syncAllDay;
-  $('#evDate').onchange = () => { if ($('#evEndDate').value < $('#evDate').value) $('#evEndDate').value = $('#evDate').value; };
+  $('#evDate').onchange = () => {
+    const d = $('#evDate').value; if (!d) return;
+    if ($('#evEndDate').value < d) $('#evEndDate').value = d;
+    fillRepeat(d); syncRepeat();
+  };
+  $('#evRepeat').onchange = syncRepeat;
+  $('#evEnds').onchange = syncRepeat;
   $('#evStart').onchange = () => {
     if (!$('#evStart').value) return;
     if (!$('#evEnd').value || state.editing == null) $('#evEnd').value = fmtMin((toMin($('#evStart').value) + 60) % 1440);
   };
   $('#evForm').addEventListener('submit', submitSheet);
+  $('#evDeleteOne').onclick = async () => {
+    const b = $('#evDeleteOne');
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Confirmer'; return; }
+    const e = state.editing, occ = state.editingOcc;
+    if (!e || !occ) return;
+    try {
+      await store().save({ ...e, exdates: [...new Set([...(e.exdates || []), occ])] });
+      closeSheet(); toast('Supprimé pour ce jour-là');
+    } catch { $('#evErr').textContent = 'Suppression impossible. Réessaie.'; $('#evErr').hidden = false; }
+  };
   $('#evDelete').onclick = async () => {
     const b = $('#evDelete');
     if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Confirmer la suppression'; return; }
