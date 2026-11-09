@@ -184,7 +184,9 @@ button { cursor: pointer; }
 .wedit { display: flex; flex-direction: column; gap: 10px; }
 .wedit-day { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .wedit-day:first-of-type { border-top: 0; padding-top: 0; }
-.wedit-day .switch { font-size: 14px; }
+.wd-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.wd-head strong { font-size: 14.5px; }
+.wd-head .seg button { height: 32px; font-size: 13px; }
 .tpair { display: grid; grid-template-columns: 74px 1fr 1fr; gap: 6px; align-items: center; font-size: 12.5px; color: var(--muted); }
 .tpair .input { height: 40px; font-size: 15px; padding: 0 8px; }
 .hint { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
@@ -386,7 +388,7 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
       <div class="field"><span class="lbl">Horaires de</span><div class="seg" id="workWho"></div></div>
       <div class="wedit" id="workDaysEdit"></div>
       <label class="switch" for="workFree">Compter dans les dispos communes <input type="checkbox" id="workFree"></label>
-      <p>Les jours de vacances scolaires (zone A) et les jours fériés comptent comme non travaillés.</p>
+      <p>Pour chaque jour, active Matin et/ou Après-midi. Aucun des deux = jour non travaillé. Les vacances scolaires (zone A) et les jours fériés comptent comme non travaillés.</p>
       <div class="err" id="workErr" hidden></div>
       <div class="actions">
         <button class="btn ghost" type="button" id="workCancel">Annuler</button>
@@ -791,8 +793,8 @@ const demoStore = {
     setColors(ls.get('cb-demo-colors', {}));
     state.schedule = ls.get('cb-demo-schedule', null) || {
       who: 'p2', countInFree: true,
-      days: { 1: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }], 2: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }],
-        3: [{ s: '08:00', e: '12:30' }], 4: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }], 5: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '16:30' }] },
+      days: { 1: [{ p: 'am', s: '08:00', e: '12:00' }, { p: 'pm', s: '13:00', e: '17:30' }], 2: [{ p: 'pm', s: '13:00', e: '17:30' }],
+        3: [{ p: 'am', s: '08:00', e: '12:30' }], 4: [{ p: 'am', s: '08:00', e: '12:00' }], 5: [{ p: 'am', s: '08:00', e: '12:00' }, { p: 'pm', s: '13:00', e: '16:30' }] },
     };
     this.persist(); render();
   },
@@ -1051,7 +1053,9 @@ function renderWork() {
       else if (!w.ranges.length) r = '<span class="off">Ne travaille pas</span>';
       else {
         const tot = w.ranges.reduce((s, [a, b]) => s + b - a, 0);
-        r = w.ranges.map(([a, b]) => `${fmtHM(a)} – ${fmtHM(b)}`).join(' · ') + `<span class="tot">${fmtDur(tot)}</span>`;
+        const sl = slotsOf(sc.days?.[parseYmd(day).getDay()]);
+        const half = sl.am && !sl.pm ? ' · après-midi libre' : sl.pm && !sl.am ? ' · matin libre' : '';
+        r = w.ranges.map(([a, b]) => `${fmtHM(a)} – ${fmtHM(b)}`).join(' · ') + `<span class="tot">${fmtDur(tot)}${half}</span>`;
       }
       const d = parseYmd(day);
       return `<div class="wday${day === today ? ' today' : ''}"><div class="d">${WD_SHORT[d.getDay()]}<small>${d.getDate()} ${esc(d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''))}</small></div><div class="r">${r}</div></div>`;
@@ -1062,6 +1066,17 @@ function renderWork() {
     ? next.map(([a, b, l]) => `<div><span>${esc(l)}</span><span>${a <= today ? 'en cours · ' : ''}${esc(shortDay(a))} → ${esc(shortDay(b))}</span></div>`).join('')
     : '<div><span>Dates pas encore enregistrées.</span></div>';
 }
+// Range les créneaux d'un jour en matin (am) / après-midi (pm).
+function slotsOf(rs) {
+  const out = {};
+  for (const r of (rs || []).filter((x) => x.s && x.e)) {
+    let k = r.p || (toMin(r.s) < 12 * 60 + 30 ? 'am' : 'pm');
+    if (out[k]) k = k === 'am' ? 'pm' : 'am';
+    out[k] = r;
+  }
+  return out;
+}
+const SLOT_DEFAULT = { am: { s: '08:00', e: '12:00' }, pm: { s: '13:30', e: '17:30' } };
 function openWorkEdit() {
   const sc = state.schedule || { who: 'p2', countInFree: true, days: {} };
   state.workEditing = true;
@@ -1070,16 +1085,15 @@ function openWorkEdit() {
   $('#workWho').innerHTML = ['p1', 'p2'].map((p) => `<button type="button" data-ww="${p}" aria-pressed="${state.workWho === p}">${esc(nameOf(p))}</button>`).join('');
   $('#workFree').checked = sc.countInFree !== false;
   $('#workDaysEdit').innerHTML = WD_ORDER.map((wd) => {
-    const r = sc.days?.[wd] || [];
-    const on = r.some((x) => x.s && x.e);
+    const sl = slotsOf(sc.days?.[wd]);
     const nm = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][wd];
-    const v = (i, k) => esc(r[i]?.[k] || '');
+    const row = (k, label) => `<div class="tpair" data-row="${k}" ${sl[k] ? '' : 'hidden'}><span>${label}</span><input class="input" type="time" id="w${k}S${wd}" value="${esc(sl[k]?.s || '')}" aria-label="${nm} ${label} début"><input class="input" type="time" id="w${k}E${wd}" value="${esc(sl[k]?.e || '')}" aria-label="${nm} ${label} fin"></div>`;
     return `<div class="wedit-day" data-wd="${wd}">
-      <label class="switch" for="wOn${wd}">${nm} <input type="checkbox" id="wOn${wd}" ${on ? 'checked' : ''}></label>
-      <div class="wtimes" ${on ? '' : 'hidden'}>
-        <div class="tpair"><span>Matin</span><input class="input" type="time" id="wS1${wd}" value="${v(0, 's')}" aria-label="${nm} matin début"><input class="input" type="time" id="wE1${wd}" value="${v(0, 'e')}" aria-label="${nm} matin fin"></div>
-        <div class="tpair"><span>Après-midi</span><input class="input" type="time" id="wS2${wd}" value="${v(1, 's')}" aria-label="${nm} après-midi début"><input class="input" type="time" id="wE2${wd}" value="${v(1, 'e')}" aria-label="${nm} après-midi fin"></div>
-      </div>
+      <div class="wd-head"><strong>${nm}</strong><div class="seg">
+        <button type="button" data-slot="am" aria-pressed="${!!sl.am}">Matin</button>
+        <button type="button" data-slot="pm" aria-pressed="${!!sl.pm}">Après-midi</button>
+      </div></div>
+      ${row('am', 'Matin')}${row('pm', 'Après-midi')}
     </div>`;
   }).join('');
   $('#workErr').hidden = true;
@@ -1089,20 +1103,21 @@ async function saveWork(evt) {
   const err = (m) => { const e = $('#workErr'); e.textContent = m; e.hidden = false; };
   const days = {};
   for (const wd of WD_ORDER) {
-    if (!$(`#wOn${wd}`).checked) { days[wd] = []; continue; }
+    const box = document.querySelector(`.wedit-day[data-wd="${wd}"]`);
     const ranges = [];
-    for (const i of [1, 2]) {
-      const s = $(`#wS${i}${wd}`).value, e = $(`#wE${i}${wd}`).value;
-      if (!s && !e) continue;
-      if (!s || !e) return err('Chaque créneau a besoin d\u2019un début et d\u2019une fin.');
-      if (toMin(e) <= toMin(s)) return err('Une heure de fin est avant son heure de début.');
-      ranges.push({ s, e });
+    for (const k of ['am', 'pm']) {
+      if (box.querySelector(`[data-slot="${k}"]`).getAttribute('aria-pressed') !== 'true') continue;
+      const s = $(`#w${k}S${wd}`).value, e = $(`#w${k}E${wd}`).value;
+      const nm = box.querySelector('strong').textContent;
+      if (!s || !e) return err(`${nm} : indique le début et la fin du ${k === 'am' ? 'matin' : 'l’après-midi'}.`);
+      if (toMin(e) <= toMin(s)) return err(`${nm} : l’heure de fin est avant l’heure de début.`);
+      ranges.push({ p: k, s, e });
     }
-    if (ranges.length === 2 && toMin(ranges[1].s) < toMin(ranges[0].e)) return err('L\u2019après-midi commence avant la fin du matin.');
+    if (ranges.length === 2 && toMin(ranges[1].s) < toMin(ranges[0].e)) return err(`${box.querySelector('strong').textContent} : l’après-midi commence avant la fin du matin.`);
     days[wd] = ranges;
   }
   const sc = { who: state.workWho || 'p2', countInFree: $('#workFree').checked, days };
-  try { await store().saveSchedule(sc); state.workEditing = false; renderWork(); toast('Emploi du temps enregistré'); }
+  try { await store().saveSchedule(sc); state.workEditing = false; renderWork(); window.scrollTo(0, 0); toast('Emploi du temps enregistré'); }
   catch { err('Enregistrement impossible. Vérifie ta connexion et réessaie.'); }
 }
 
@@ -1320,13 +1335,20 @@ function bind() {
   $('#workEditBtn').onclick = openWorkEdit;
   $('#workCancel').onclick = () => { state.workEditing = false; renderWork(); window.scrollTo(0, 0); };
   $('#workForm').addEventListener('submit', saveWork);
-  $('#workForm').addEventListener('change', (e) => {
-    const box = e.target.closest('.wedit-day');
-    if (box && e.target.id.startsWith('wOn')) {
-      const t = box.querySelector('.wtimes'); t.hidden = !e.target.checked;
-      if (e.target.checked && !box.querySelector('input[type=time]').value) {
-        const wd = box.dataset.wd; $(`#wS1${wd}`).value = '08:00'; $(`#wE1${wd}`).value = '12:00'; $(`#wS2${wd}`).value = '13:30'; $(`#wE2${wd}`).value = '17:30';
+  $('#workDaysEdit').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-slot]'); if (!b) return;
+    const box = b.closest('.wedit-day'), k = b.dataset.slot, wd = box.dataset.wd;
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(on));
+    box.querySelector(`[data-row="${k}"]`).hidden = !on;
+    if (on && !$(`#w${k}S${wd}`).value) {
+      // Reprend les heures du dernier jour rempli pour ce créneau, sinon des heures par défaut.
+      let src = SLOT_DEFAULT[k];
+      for (const o of WD_ORDER) {
+        const s = $(`#w${k}S${o}`).value, en = $(`#w${k}E${o}`).value;
+        if (String(o) !== wd && s && en) { src = { s, e: en }; break; }
       }
+      $(`#w${k}S${wd}`).value = src.s; $(`#w${k}E${wd}`).value = src.e;
     }
   });
   $('#workWho').addEventListener('click', (e) => {
