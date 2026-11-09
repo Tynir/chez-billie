@@ -163,6 +163,30 @@ button { cursor: pointer; }
 .ev .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--muted); margin-top: 3px; align-items: center; }
 .tag { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--c); }
 .tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+/* Horaires */
+.weekbar { display: flex; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.weekbar strong { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; }
+.notice { border-radius: 12px; padding: 10px 12px; font-size: 13.5px; font-weight: 500; background: var(--surface-2); margin-bottom: 10px; }
+.notice b { font-weight: 600; }
+.wdays { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.wday { display: flex; gap: 12px; align-items: baseline; padding: 11px 14px; border-top: 1px solid var(--line); }
+.wday:first-child { border-top: 0; }
+.wday .d { width: 64px; flex: none; font-weight: 600; font-size: 14px; text-transform: capitalize; }
+.wday .d small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; text-transform: none; }
+.wday .r { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; font-size: 14.5px; font-weight: 500; }
+.wday .r .off { color: var(--muted); font-weight: 400; }
+.wday .r .tot { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+.wday.today { background: color-mix(in srgb, var(--c-p2) 9%, var(--surface)); }
+.wday.today .d { color: var(--fg); }
+.holi { display: flex; flex-direction: column; gap: 6px; }
+.holi div { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.holi div span:last-child { color: var(--muted); text-align: right; }
+.wedit { display: flex; flex-direction: column; gap: 10px; }
+.wedit-day { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.wedit-day:first-of-type { border-top: 0; padding-top: 0; }
+.wedit-day .switch { font-size: 14px; }
+.tpair { display: grid; grid-template-columns: 74px 1fr 1fr; gap: 6px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.tpair .input { height: 40px; font-size: 15px; padding: 0 8px; }
 .hint { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
 .actions .btn.danger { flex: 1 1 140px; }
 .meta svg { width: 13px; height: 13px; vertical-align: -2px; }
@@ -239,7 +263,7 @@ textarea.input { height: auto; min-height: 72px; padding: 10px 12px; resize: ver
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
 }
-.tabbar nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tabbar-h); }
+.tabbar nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--tabbar-h); }
 .tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
 .tabbar button svg { width: 22px; height: 22px; }
 .tabbar button[aria-current="page"] { color: var(--fg); }
@@ -339,6 +363,38 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
     <div class="slots" id="slots"></div>
   </section>
 
+  <!-- Horaires -->
+  <section id="viewWork" hidden>
+    <h1 class="section-title" id="workTitle">Horaires</h1>
+    <div id="workShow">
+      <div class="weekbar">
+        <button class="icon-btn" type="button" id="wkPrev" aria-label="Semaine précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <strong id="wkLabel"></strong>
+        <button class="icon-btn" type="button" id="wkNext" aria-label="Semaine suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="pill-btn" type="button" id="wkToday">Auj.</button>
+      </div>
+      <div id="wkNotice"></div>
+      <div class="wdays" id="wkDays"></div>
+      <div class="card" style="margin-top:14px">
+        <h3>Prochaines vacances · zone A</h3>
+        <div class="holi" id="holiList"></div>
+      </div>
+      <button class="btn ghost" type="button" id="workEditBtn" style="width:100%">Modifier l'emploi du temps</button>
+    </div>
+    <form id="workForm" class="card" novalidate hidden>
+      <h3>Emploi du temps de la semaine</h3>
+      <div class="field"><span class="lbl">Horaires de</span><div class="seg" id="workWho"></div></div>
+      <div class="wedit" id="workDaysEdit"></div>
+      <label class="switch" for="workFree">Compter dans les dispos communes <input type="checkbox" id="workFree"></label>
+      <p>Les jours de vacances scolaires (zone A) et les jours fériés comptent comme non travaillés.</p>
+      <div class="err" id="workErr" hidden></div>
+      <div class="actions">
+        <button class="btn ghost" type="button" id="workCancel">Annuler</button>
+        <button class="btn" type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+
   <!-- Réglages -->
   <section id="viewSettings" hidden>
     <h1 class="section-title">Réglages</h1>
@@ -396,6 +452,7 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
   <nav>
     <button data-view="cal" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendrier</button>
     <button data-view="free"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="10" r="2.6"/><path d="M3.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5M14.5 14.6c.5-.2 1-.3 1.5-.3 2.2 0 3.9 1.6 4.4 4.2"/></svg>Dispos</button>
+    <button data-view="work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Horaires</button>
     <button data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</button>
   </nav>
 </div>
@@ -487,6 +544,9 @@ const state = {
   mode: 'demo', user: null, events: [],
   names: { ...DEFAULT_NAMES },
   colors: { ...DEFAULT_COLORS },
+  schedule: null,
+  workWeek: null,
+  workEditing: false,
   picking: null,
   me: ls.get('cb-me', 'p1'),
   view: 'cal',
@@ -621,6 +681,53 @@ function eventsOn(day, includeHidden = false) {
     .sort((a, b) => dayOrder(a, day) - dayOrder(b, day));
 }
 
+// ----- Vacances scolaires zone A (académie de Bordeaux) : premier et dernier jour sans cours -----
+const HOLIDAYS_A = [
+  ['2026-10-17', '2026-11-01', 'Vacances de la Toussaint'],
+  ['2026-12-19', '2027-01-03', 'Vacances de Noël'],
+  ['2027-02-13', '2027-02-28', 'Vacances d\u2019hiver'],
+  ['2027-04-10', '2027-04-25', 'Vacances de printemps'],
+  ['2027-05-07', '2027-05-09', 'Pont de l\u2019Ascension'],
+  ['2027-07-03', '2027-09-01', 'Vacances d\u2019été'],
+  ['2027-10-23', '2027-11-07', 'Vacances de la Toussaint'],
+  ['2027-12-18', '2028-01-02', 'Vacances de Noël'],
+  ['2028-02-19', '2028-03-05', 'Vacances d\u2019hiver'],
+  ['2028-04-22', '2028-05-08', 'Vacances de printemps'],
+  ['2028-05-26', '2028-05-28', 'Pont de l\u2019Ascension'],
+  ['2028-07-05', '2028-08-31', 'Vacances d\u2019été'],
+];
+const HOLIDAYS_KNOWN_UNTIL = '2028-08-31';
+const holidayOn = (day) => HOLIDAYS_A.find(([a, b]) => day >= a && day <= b) || null;
+const _feries = {};
+function feriesOf(y) {
+  if (_feries[y]) return _feries[y];
+  // Date de Pâques (algorithme de Meeus)
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+    g = Math.floor((b - f + 1) / 3), hh = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+    l = (32 + 2 * e + 2 * i - hh - k) % 7, m = Math.floor((a + 11 * hh + 22 * l) / 451),
+    month = Math.floor((hh + l - 7 * m + 114) / 31), day = ((hh + l - 7 * m + 114) % 31) + 1;
+  const easter = ymd(new Date(y, month - 1, day));
+  return (_feries[y] = {
+    [`${y}-01-01`]: 'Jour de l\u2019an', [addDays(easter, 1)]: 'Lundi de Pâques', [`${y}-05-01`]: 'Fête du travail',
+    [`${y}-05-08`]: 'Victoire 1945', [addDays(easter, 39)]: 'Ascension', [addDays(easter, 50)]: 'Lundi de Pentecôte',
+    [`${y}-07-14`]: 'Fête nationale', [`${y}-08-15`]: 'Assomption', [`${y}-11-01`]: 'Toussaint',
+    [`${y}-11-11`]: 'Armistice', [`${y}-12-25`]: 'Noël',
+  });
+}
+const ferieOn = (day) => feriesOf(Number(day.slice(0, 4)))[day] || null;
+// Horaires du jour : { off: raison ou null, ranges: [[min, min], ...] }
+function workOn(day) {
+  const sc = state.schedule;
+  if (!sc) return { off: null, ranges: [] };
+  const ranges = (sc.days?.[parseYmd(day).getDay()] || []).filter((r) => r.s && r.e).map((r) => [toMin(r.s), toMin(r.e)]).filter(([a, b]) => b > a);
+  if (!ranges.length) return { off: null, ranges: [] };
+  const f = ferieOn(day); if (f) return { off: `Férié · ${f}`, ranges: [] };
+  const hol = holidayOn(day); if (hol) return { off: hol[2], ranges: [] };
+  return { off: null, ranges };
+}
+const mondayOf = (day) => { const d = parseYmd(day); return addDays(day, -((d.getDay() + 6) % 7)); };
+const fmtHM = (m) => `${Math.floor(m / 60)}:${pad(m % 60)}`;
+
 // Intervalles occupés (en minutes) pour le couple sur une journée : perso + « Nous ». Billie ne bloque pas.
 function busyIntervals(day) {
   const out = [];
@@ -639,6 +746,7 @@ function busyIntervals(day) {
     if (e.date === day) out.push([s, en > s ? en : 1440]);
     else if (e.end && en <= s && addDays(e.date, 1) === day) out.push([0, en]);
   }
+  if (state.schedule && state.schedule.countInFree !== false) out.push(...workOn(day).ranges);
   return out;
 }
 
@@ -681,6 +789,11 @@ const demoStore = {
     state.events = ls.get('cb-demo-events', null) || demoSeed();
     state.names = { ...DEFAULT_NAMES, ...ls.get('cb-demo-names', {}) };
     setColors(ls.get('cb-demo-colors', {}));
+    state.schedule = ls.get('cb-demo-schedule', null) || {
+      who: 'p2', countInFree: true,
+      days: { 1: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }], 2: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }],
+        3: [{ s: '08:00', e: '12:30' }], 4: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:30' }], 5: [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '16:30' }] },
+    };
     this.persist(); render();
   },
   persist() { ls.set('cb-demo-events', state.events); },
@@ -693,6 +806,7 @@ const demoStore = {
   async saveNames(n) { state.names = n; ls.set('cb-demo-names', n); render(); },
   async saveMe() {},
   async saveColors(c) { setColors(c); ls.set('cb-demo-colors', c); render(); },
+  async saveSchedule(sc) { state.schedule = sc; ls.set('cb-demo-schedule', sc); render(); },
   reset() { state.events = demoSeed(); this.persist(); render(); },
 };
 
@@ -725,7 +839,8 @@ const fbStore = {
     }, (err) => toast('Lecture impossible : vérifie les règles Firestore (' + err.code + ').')));
     fb.unsubs.push(fsM.onSnapshot(fsM.doc(db, 'config', 'foyer'), (snap) => {
       state.names = { ...DEFAULT_NAMES, ...(snap.data()?.names || {}) };
-      setColors(snap.data()?.colors); ls.set('cb-colors', state.colors); render();
+      setColors(snap.data()?.colors); ls.set('cb-colors', state.colors);
+      state.schedule = snap.data()?.schedule || null; render();
     }));
     fsM.getDoc(fsM.doc(db, 'users', user.uid)).then((s) => {
       const p = s.data()?.person;
@@ -747,6 +862,7 @@ const fbStore = {
   },
   async remove(id) { await fb.fsM.deleteDoc(fb.fsM.doc(fb.db, 'events', id)); },
   async saveColors(c) { setColors(c); render(); await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'config', 'foyer'), { colors: c }, { merge: true }); },
+  async saveSchedule(sc) { await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'config', 'foyer'), { schedule: sc }, { merge: true }); },
   async saveNames(n) { await fb.fsM.setDoc(fb.fsM.doc(fb.db, 'config', 'foyer'), { names: n }, { merge: true }); },
   async saveMe(p) {
     if (!state.user) return;
@@ -802,13 +918,15 @@ function render() {
   $('#viewCal').hidden = loggedOut || state.view !== 'cal';
   $('#viewFree').hidden = loggedOut || state.view !== 'free';
   $('#viewSettings').hidden = loggedOut || state.view !== 'settings';
-  $('#fab').hidden = loggedOut || state.view === 'settings';
+  $('#viewWork').hidden = loggedOut || state.view !== 'work';
+  $('#fab').hidden = loggedOut || state.view === 'settings' || state.view === 'work';
   document.querySelectorAll('.tabbar button').forEach((b) => b.toggleAttribute('aria-current', b.dataset.view === state.view));
   document.querySelectorAll('.tabbar button[aria-current]').forEach((b) => b.setAttribute('aria-current', 'page'));
   if (loggedOut) return;
   if (state.view === 'cal') renderCal();
   if (state.view === 'free') renderFree();
   if (state.view === 'settings') renderSettings();
+  if (state.view === 'work') renderWork();
 }
 
 function renderFilters() {
@@ -885,7 +1003,7 @@ function renderFree() {
   seg($('#segWindow'), 'win', FREE_OPTS.win);
   seg($('#segDur'), 'dur', FREE_OPTS.dur);
   seg($('#segDays'), 'days', FREE_OPTS.days);
-  $('#freeLead').textContent = `Les créneaux où ${nameOf('p1')} et ${nameOf('p2')} sont libres tous les deux. Les événements perso et « Nous » comptent comme occupés. Ceux de ${nameOf('billie')}, non.`;
+  $('#freeLead').textContent = `Les créneaux où ${nameOf('p1')} et ${nameOf('p2')} sont libres tous les deux. Les événements perso et « Nous » comptent comme occupés${state.schedule && state.schedule.countInFree !== false ? `, ainsi que les horaires de travail de ${nameOf(state.schedule.who || 'p2')}` : ''}. Ceux de ${nameOf('billie')}, non.`;
   const [ws, we] = WINDOWS[state.free.win];
   const out = [];
   let total = 0;
@@ -902,6 +1020,90 @@ function renderFree() {
   }
   $('#slots').innerHTML = out.length ? out.join('') + `<p class="note">${total} jour${total > 1 ? 's' : ''} avec au moins un créneau commun.</p>`
     : `<div class="empty">Aucun créneau commun avec ces critères. Essaie une durée plus courte ou une période plus longue.</div>`;
+}
+
+const WD_SHORT = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+const WD_ORDER = [1, 2, 3, 4, 5, 6, 0];
+function renderWork() {
+  const sc = state.schedule;
+  const who = sc?.who || 'p2';
+  $('#workTitle').textContent = `Horaires de ${nameOf(who)}`;
+  $('#workShow').hidden = state.workEditing;
+  $('#workForm').hidden = !state.workEditing;
+  if (state.workEditing) return;
+  if (!state.workWeek) state.workWeek = mondayOf(todayYmd());
+  const mon = state.workWeek, sun = addDays(mon, 6), today = todayYmd();
+  $('#wkLabel').textContent = `Semaine du ${fmtDay(mon, { day: 'numeric', month: 'long' })}`;
+  // Bandeau vacances / fériés de la semaine
+  const notes = [];
+  const hols = HOLIDAYS_A.filter(([a, b]) => a <= sun && b >= mon);
+  hols.forEach(([a, b, l]) => notes.push(`<div class="notice"><b>${esc(l)}</b> · du ${esc(shortDay(a))} au ${esc(shortDay(b))}</div>`));
+  if (sun > HOLIDAYS_KNOWN_UNTIL) notes.push('<div class="notice">Les vacances scolaires après l\u2019été 2028 ne sont pas encore enregistrées.</div>');
+  $('#wkNotice').innerHTML = notes.join('');
+  if (!sc || !Object.values(sc.days || {}).some((d) => d && d.some((r) => r.s && r.e))) {
+    $('#wkDays').innerHTML = '<div class="empty" style="padding:16px">Pas encore d\u2019emploi du temps. Touche « Modifier l\u2019emploi du temps » pour le remplir.</div>';
+  } else {
+    $('#wkDays').innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const day = addDays(mon, i);
+      const w = workOn(day);
+      let r;
+      if (w.off) r = `<span class="off">${esc(w.off)}</span>`;
+      else if (!w.ranges.length) r = '<span class="off">Ne travaille pas</span>';
+      else {
+        const tot = w.ranges.reduce((s, [a, b]) => s + b - a, 0);
+        r = w.ranges.map(([a, b]) => `${fmtHM(a)} – ${fmtHM(b)}`).join(' · ') + `<span class="tot">${fmtDur(tot)}</span>`;
+      }
+      const d = parseYmd(day);
+      return `<div class="wday${day === today ? ' today' : ''}"><div class="d">${WD_SHORT[d.getDay()]}<small>${d.getDate()} ${esc(d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''))}</small></div><div class="r">${r}</div></div>`;
+    }).join('');
+  }
+  const next = HOLIDAYS_A.filter(([, b]) => b >= today).slice(0, 4);
+  $('#holiList').innerHTML = next.length
+    ? next.map(([a, b, l]) => `<div><span>${esc(l)}</span><span>${a <= today ? 'en cours · ' : ''}${esc(shortDay(a))} → ${esc(shortDay(b))}</span></div>`).join('')
+    : '<div><span>Dates pas encore enregistrées.</span></div>';
+}
+function openWorkEdit() {
+  const sc = state.schedule || { who: 'p2', countInFree: true, days: {} };
+  state.workEditing = true;
+  state.workWho = sc.who || 'p2';
+  renderWork();
+  $('#workWho').innerHTML = ['p1', 'p2'].map((p) => `<button type="button" data-ww="${p}" aria-pressed="${state.workWho === p}">${esc(nameOf(p))}</button>`).join('');
+  $('#workFree').checked = sc.countInFree !== false;
+  $('#workDaysEdit').innerHTML = WD_ORDER.map((wd) => {
+    const r = sc.days?.[wd] || [];
+    const on = r.some((x) => x.s && x.e);
+    const nm = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][wd];
+    const v = (i, k) => esc(r[i]?.[k] || '');
+    return `<div class="wedit-day" data-wd="${wd}">
+      <label class="switch" for="wOn${wd}">${nm} <input type="checkbox" id="wOn${wd}" ${on ? 'checked' : ''}></label>
+      <div class="wtimes" ${on ? '' : 'hidden'}>
+        <div class="tpair"><span>Matin</span><input class="input" type="time" id="wS1${wd}" value="${v(0, 's')}" aria-label="${nm} matin début"><input class="input" type="time" id="wE1${wd}" value="${v(0, 'e')}" aria-label="${nm} matin fin"></div>
+        <div class="tpair"><span>Après-midi</span><input class="input" type="time" id="wS2${wd}" value="${v(1, 's')}" aria-label="${nm} après-midi début"><input class="input" type="time" id="wE2${wd}" value="${v(1, 'e')}" aria-label="${nm} après-midi fin"></div>
+      </div>
+    </div>`;
+  }).join('');
+  $('#workErr').hidden = true;
+}
+async function saveWork(evt) {
+  evt.preventDefault();
+  const err = (m) => { const e = $('#workErr'); e.textContent = m; e.hidden = false; };
+  const days = {};
+  for (const wd of WD_ORDER) {
+    if (!$(`#wOn${wd}`).checked) { days[wd] = []; continue; }
+    const ranges = [];
+    for (const i of [1, 2]) {
+      const s = $(`#wS${i}${wd}`).value, e = $(`#wE${i}${wd}`).value;
+      if (!s && !e) continue;
+      if (!s || !e) return err('Chaque créneau a besoin d\u2019un début et d\u2019une fin.');
+      if (toMin(e) <= toMin(s)) return err('Une heure de fin est avant son heure de début.');
+      ranges.push({ s, e });
+    }
+    if (ranges.length === 2 && toMin(ranges[1].s) < toMin(ranges[0].e)) return err('L\u2019après-midi commence avant la fin du matin.');
+    days[wd] = ranges;
+  }
+  const sc = { who: state.workWho || 'p2', countInFree: $('#workFree').checked, days };
+  try { await store().saveSchedule(sc); state.workEditing = false; renderWork(); toast('Emploi du temps enregistré'); }
+  catch { err('Enregistrement impossible. Vérifie ta connexion et réessaie.'); }
 }
 
 function renderSettings() {
@@ -1112,6 +1314,26 @@ function bind() {
   $('#monthClose').onclick = closeMonths;
   $('#monthSheet').addEventListener('click', (e) => { if (e.target.id === 'monthSheet') closeMonths(); });
   $('#monthForm').addEventListener('submit', (e) => e.preventDefault());
+  $('#wkPrev').onclick = () => { state.workWeek = addDays(state.workWeek, -7); renderWork(); };
+  $('#wkNext').onclick = () => { state.workWeek = addDays(state.workWeek, 7); renderWork(); };
+  $('#wkToday').onclick = () => { state.workWeek = mondayOf(todayYmd()); renderWork(); };
+  $('#workEditBtn').onclick = openWorkEdit;
+  $('#workCancel').onclick = () => { state.workEditing = false; renderWork(); window.scrollTo(0, 0); };
+  $('#workForm').addEventListener('submit', saveWork);
+  $('#workForm').addEventListener('change', (e) => {
+    const box = e.target.closest('.wedit-day');
+    if (box && e.target.id.startsWith('wOn')) {
+      const t = box.querySelector('.wtimes'); t.hidden = !e.target.checked;
+      if (e.target.checked && !box.querySelector('input[type=time]').value) {
+        const wd = box.dataset.wd; $(`#wS1${wd}`).value = '08:00'; $(`#wE1${wd}`).value = '12:00'; $(`#wS2${wd}`).value = '13:30'; $(`#wE2${wd}`).value = '17:30';
+      }
+    }
+  });
+  $('#workWho').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ww]'); if (!b) return;
+    state.workWho = b.dataset.ww;
+    $('#workWho').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  });
   $('#todayBtn').onclick = () => { const d = new Date(); state.month = new Date(d.getFullYear(), d.getMonth(), 1); state.selected = todayYmd(); renderCal(); };
   let sx = null, sy = null;
   $('#month').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
