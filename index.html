@@ -46,6 +46,7 @@
   --c-p2: var(--pal-rose);
   --c-nous: var(--pal-vert);
   --c-billie: var(--pal-ambre);
+  --c-anniv: var(--pal-violet);
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --tabbar-h: 64px;
@@ -78,7 +79,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.cat-p1 { --c: var(--c-p1); } .cat-p2 { --c: var(--c-p2); } .cat-nous { --c: var(--c-nous); } .cat-billie { --c: var(--c-billie); }
+.cat-p1 { --c: var(--c-p1); } .cat-p2 { --c: var(--c-p2); } .cat-nous { --c: var(--c-nous); } .cat-billie { --c: var(--c-billie); } .cat-anniv { --c: var(--c-anniv); }
 
 .app {
   max-width: 560px; margin: 0 auto;
@@ -283,7 +284,7 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
 }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .sheet-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0; }
-.who { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.who { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .who label { position: relative; }
 .who input { position: absolute; opacity: 0; inset: 0; }
 .who span {
@@ -418,6 +419,10 @@ dialog.sheet::backdrop { background: rgb(10 8 16 / .45); }
         <div class="namefield"><button type="button" class="colorbtn" data-pick="billie" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><input class="input" id="nameBillie" aria-label="Nom du chat" maxlength="20"></div>
         <div class="swatches" data-for="billie" role="radiogroup" hidden></div>
       </div>
+      <div class="person cat-anniv">
+        <div class="namefield"><button type="button" class="colorbtn" data-pick="anniv" aria-expanded="false" aria-label="Changer la couleur"><span class="dot"></span></button><span class="fixedname">Anniversaires</span></div>
+        <div class="swatches" data-for="anniv" role="radiogroup" hidden></div>
+      </div>
       <p>Touche une pastille pour changer de couleur. Prénoms et couleurs sont partagés entre vos deux téléphones.</p>
     </div>
     <div class="card">
@@ -532,10 +537,10 @@ const fmtDur = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${
 const todayYmd = () => ymd(new Date());
 const fmtDay = (s, opts = { weekday: 'long', day: 'numeric', month: 'long' }) => parseYmd(s).toLocaleDateString('fr-FR', opts);
 
-const CATS = ['p1', 'p2', 'nous', 'billie'];
-const DEFAULT_NAMES = { p1: 'Lui', p2: 'Elle', nous: 'Nous', billie: 'Billie' };
+const CATS = ['p1', 'p2', 'nous', 'billie', 'anniv'];
+const DEFAULT_NAMES = { p1: 'Lui', p2: 'Elle', nous: 'Nous', billie: 'Billie', anniv: 'Anniversaires' };
 const PALETTE = [['bleu', 'Bleu'], ['ciel', 'Ciel'], ['vert', 'Vert'], ['sapin', 'Sapin'], ['olive', 'Olive'], ['ambre', 'Ambre'], ['orange', 'Orange'], ['rouge', 'Rouge'], ['rose', 'Rose'], ['prune', 'Prune'], ['violet', 'Violet'], ['ardoise', 'Ardoise']];
-const DEFAULT_COLORS = { p1: 'bleu', p2: 'rose', nous: 'vert', billie: 'ambre' };
+const DEFAULT_COLORS = { p1: 'bleu', p2: 'rose', nous: 'vert', billie: 'ambre', anniv: 'violet' };
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const REPEAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg>';
 const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
@@ -574,7 +579,16 @@ function applyColors() {
     root.style.setProperty(`--c-${c}`, `var(--pal-${k})`);
   }
 }
-function setColors(colors) { state.colors = { ...DEFAULT_COLORS, ...(colors || {}) }; applyColors(); }
+function setColors(colors) {
+  const c = { ...DEFAULT_COLORS, ...(colors || {}) };
+  // Évite deux catégories de la même couleur (ex. nouvelle catégorie ajoutée après coup).
+  const used = new Set();
+  for (const k of CATS) {
+    if (used.has(c[k])) c[k] = PALETTE.map((p) => p[0]).find((x) => !used.has(x) && !Object.values(c).includes(x)) || c[k];
+    used.add(c[k]);
+  }
+  state.colors = c; applyColors();
+}
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
@@ -734,7 +748,7 @@ const fmtHM = (m) => `${Math.floor(m / 60)}:${pad(m % 60)}`;
 function busyIntervals(day) {
   const out = [];
   for (const e of instancesCovering(day, 1)) {
-    if (e.who === 'billie') continue;
+    if (e.who === 'billie' || e.who === 'anniv') continue;
     if (e.allDay) { if (day >= e.date && day <= spanEnd(e)) out.push([0, 1440]); continue; }
     const s = toMin(e.start);
     if (isMultiDay(e)) {
@@ -776,6 +790,7 @@ function demoSeed() {
     { id: id(), title: 'Commander les croquettes', who: 'billie', date: (() => { const n = new Date(); return ymd(new Date(n.getFullYear(), n.getMonth(), 10)); })(), allDay: true, reminder: '900', repeat: { freq: 'monthly', interval: 1, until: null, count: null } },
     { id: id(), title: 'Régie son – concert salle des fêtes', who: 'p1', date: t, start: '17:00', end: '01:30', allDay: false, reminder: '120', notes: 'Balances à 17 h, ouverture des portes 20 h.' },
     { id: id(), title: 'Vermifuge de Billie', who: 'billie', date: t, allDay: true, reminder: '0' },
+    { id: id(), title: 'Anniversaire de Léa', who: 'anniv', date: D(5), allDay: true, reminder: '900', repeat: { freq: 'yearly', interval: 1, until: null, count: null } },
     { id: id(), title: 'Yoga', who: 'p2', date: D(1), start: '10:00', end: '11:00', allDay: false },
     { id: id(), title: 'Ciné', who: 'nous', date: D(1), start: '20:30', end: '22:45', allDay: false, reminder: '60' },
     { id: id(), title: 'Tournée – montage et démontage', who: 'p1', date: D(2), endDate: D(4), allDay: true },
@@ -1005,7 +1020,7 @@ function renderFree() {
   seg($('#segWindow'), 'win', FREE_OPTS.win);
   seg($('#segDur'), 'dur', FREE_OPTS.dur);
   seg($('#segDays'), 'days', FREE_OPTS.days);
-  $('#freeLead').textContent = `Les créneaux où ${nameOf('p1')} et ${nameOf('p2')} sont libres tous les deux. Les événements perso et « Nous » comptent comme occupés${state.schedule && state.schedule.countInFree !== false ? `, ainsi que les horaires de travail de ${nameOf(state.schedule.who || 'p2')}` : ''}. Ceux de ${nameOf('billie')}, non.`;
+  $('#freeLead').textContent = `Les créneaux où ${nameOf('p1')} et ${nameOf('p2')} sont libres tous les deux. Les événements perso et « Nous » comptent comme occupés${state.schedule && state.schedule.countInFree !== false ? `, ainsi que les horaires de travail de ${nameOf(state.schedule.who || 'p2')}` : ''}. Ceux de ${nameOf('billie')} et les anniversaires, non.`;
   const [ws, we] = WINDOWS[state.free.win];
   const out = [];
   let total = 0;
@@ -1179,7 +1194,7 @@ function openSheet(ev, occ) {
   const e = ev || { title: '', who: state.me, date: state.selected, start: '19:00', end: '20:00', allDay: false, reminder: '60', notes: '' };
   $('#sheetTitle').textContent = ev ? 'Modifier' : 'Nouvel événement';
   $('#evTitle').value = e.title || '';
-  $('#evWho').innerHTML = CATS.map((c) => `<label class="cat-${c}"><input type="radio" name="who" value="${c}" ${e.who === c ? 'checked' : ''}><span>${esc(nameOf(c))}</span></label>`).join('');
+  $('#evWho').innerHTML = CATS.map((c) => `<label class="cat-${c}"><input type="radio" name="who" value="${c}" ${e.who === c ? 'checked' : ''}><span>${esc(c === 'anniv' ? 'Anniv.' : nameOf(c))}</span></label>`).join('');
   $('#evAllDay').checked = !!e.allDay;
   $('#evDate').value = e.date;
   $('#evEndDate').value = e.endDate || e.date;
@@ -1369,6 +1384,13 @@ function bind() {
   $('#sheetClose').onclick = closeSheet;
   $('#sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
   $('#evAllDay').onchange = syncAllDay;
+  $('#evWho').addEventListener('change', (e) => {
+    if (e.target.value !== 'anniv' || state.editing) return;
+    $('#evAllDay').checked = true; syncAllDay();
+    fillRepeat($('#evDate').value, 'yearly:1'); $('#evEnds').value = 'never'; syncRepeat();
+    fillReminders(true, '900');
+    if (!$('#evTitle').value.trim()) { $('#evTitle').value = 'Anniversaire de '; $('#evTitle').focus(); }
+  });
   $('#evDate').onchange = () => {
     const d = $('#evDate').value; if (!d) return;
     if ($('#evEndDate').value < d) $('#evEndDate').value = d;
