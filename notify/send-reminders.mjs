@@ -28,7 +28,7 @@ const [eventsSnap, usersSnap, configSnap] = await Promise.all([
 const names = { p1: 'Lui', p2: 'Elle', nous: 'Nous', billie: 'Billie', ...(configSnap.data()?.names || {}) };
 const users = usersSnap.docs.map((d) => ({ ref: d.ref, ...d.data() }));
 const tokensFor = (who) => {
-  const list = users.filter((u) => who === 'nous' || who === 'billie' || u.person === who);
+  const list = users.filter((u) => who === 'nous' || who === 'billie' || who === 'anniv' || u.person === who);
   return list.flatMap((u) => (u.tokens || []).map((t) => ({ t, ref: u.ref })));
 };
 
